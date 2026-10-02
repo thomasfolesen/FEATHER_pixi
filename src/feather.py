@@ -19,17 +19,28 @@ class FEATHER:
 
     def _create_D_inverse(self, graph):
         """
+        current ER_edges.csv does not have weight
+        D⁻¹
         Creating a sparse inverse degree matrix.
-        
+        Diagonal values are the inverse of the sum of edge weights connected to the corresponding node.        
         Arg types:
             * **graph** *(NetworkX graph)* - The graph to be embedded.
         Return types:
             * **D_inverse** *(Scipy array)* - Diagonal inverse degree matrix.
         """
         index = np.arange(graph.number_of_nodes())
-        values = np.array([1.0/graph.degree[node] for node in range(graph.number_of_nodes())])
+        weights_sum = np.array([
+            graph.degree(node, weight="weight")
+            for node in range(graph.number_of_nodes())
+        ], dtype=float)
+        weights_sum[weights_sum == 0] = 1.0
+        values = 1.0 / weights_sum
         shape = (graph.number_of_nodes(), graph.number_of_nodes())
-        D_inverse = sparse.coo_matrix((values, (index, index)), shape=shape)
+        D_inverse = sparse.coo_matrix(
+            (values, (index, index)),
+            shape=shape
+        )
+
         return D_inverse
 
     def _create_A_tilde(self, graph):
