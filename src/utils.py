@@ -24,9 +24,10 @@ def load_graph(graph_path):
     :return graph: NetworkX object.
     """
     data = pd.read_csv(graph_path)
-    edges = data.values.tolist()
-    edges = [[int(edge[0]), int(edge[1])] for edge in edges]
-    graph = nx.from_edgelist(edges)
+    graph = nx.from_pandas_edgelist(data, 
+        source="node_1", 
+        target="node_2", 
+        edge_attr="weight")
     graph.remove_edges_from(nx.selfloop_edges(graph))
     return graph
 

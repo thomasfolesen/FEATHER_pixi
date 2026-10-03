@@ -74,7 +74,7 @@ class FEATHER:
         return self._X
 
 class FEATHER_new:
-    r"""An implementation of the node level unsupervised FEATHER.
+    r"""An implementation of the node level unsupervised FEATHER using edge weights.
     
     Args:
         theta_max (float): Maximal evaluation point. Default is 2.5.

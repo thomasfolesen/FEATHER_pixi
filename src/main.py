@@ -1,7 +1,7 @@
 """Running FEATHER."""
 
 from utils import tab_printer
-from feather import FEATHER, FEATHERG
+from feather import FEATHER, FEATHERG, FEATHER_new
 from param_parser import parameter_parser
 from utils import load_graph, load_features, load_graphs, save_embedding
 
@@ -17,6 +17,19 @@ def main(args):
         features = load_features(args.feature_input)
 
         model = FEATHER(
+            theta_max=args.theta_max,
+            eval_points=args.eval_points,
+            order=args.order
+        )
+
+        model.fit(graph, features)
+
+    elif args.model_type == "FEATHER_new":
+        print("\nFitting a node embedding.\n")
+        graph = load_graph(args.graph_input)
+        features = load_features(args.feature_input)
+
+        model = FEATHER_new(
             theta_max=args.theta_max,
             eval_points=args.eval_points,
             order=args.order
