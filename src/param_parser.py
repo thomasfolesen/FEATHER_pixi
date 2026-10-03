@@ -6,21 +6,21 @@ def parameter_parser():
     """
     Parsing the parameters from the command line.
     """
-    parser=argparse.ArgumentParser(description="Run FEATHER / FEATHER-G.")
+    parser=argparse.ArgumentParser(description="Run FEATHER / FEATHER_new / FEATHER-G.")
 
     parser.add_argument('--graph-input',
                         nargs='?',
-                        default="./input/edges/ER_edges.csv",
+                        default="./input/original/edges/ER_edges.csv",
 	                help='Input edge list csv.')
 
     parser.add_argument('--feature-input',
                         nargs='?',
-                        default="./input/features/ER_features.csv",
+                        default="./input/original/features/ER_features.csv",
 	                help='Input features csv.')
 
     parser.add_argument('--graphs-input',
                         nargs='?',
-                        default='./input/graphs/ER_graphs.json',
+                        default='./input/original/graphs/ER_graphs.json',
 	                help='Input graphs as JSON.')
 
     parser.add_argument('--output',
@@ -45,7 +45,7 @@ def parameter_parser():
 
     parser.add_argument('--model-type',
                         nargs='?',
-                        default='FEATHER',
-	                help='Fit FEATHER node embedding. Default is FEATHER.')
+                        default='FEATHER_new',
+	                help='Fit FEATHER node embedding. Default is FEATHER_new.')
 
     return parser.parse_args()
