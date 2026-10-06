@@ -7,15 +7,8 @@
   "cells": [
     {
       "id": "Hbol",
-      "code_hash": "d96e018f51ea61e5ff2f9c349c5da67d",
-      "outputs": [
-        {
-          "type": "data",
-          "data": {
-            "text/html": "<pre class='text-xs'>2</pre>"
-          }
-        }
-      ],
+      "code_hash": null,
+      "outputs": [],
       "console": []
     }
   ]

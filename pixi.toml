@@ -9,8 +9,8 @@ version = "0.1.0"
 FEATHER = "python src/main.py --model-type FEATHER"
 FEATHER_new = "python src/main.py --model-type FEATHER_new"
 
-geo_test_edit = "python -m marimo edit input/geo/geo_test.py"
-
+geo_test_edit_clara = "python -m marimo edit input/geo/geo_test_clara.py"
+geo_test_run = "python -m marimo run input/geo/geo_test.py"
 
 [dependencies]
 python = "3.10.*"
@@ -21,3 +21,4 @@ networkx = ">=3.4.2,<4"
 tqdm = ">=4.70.0,<5"
 texttable = ">=1.7.0,<2"
 marimo = ">=0.24.0,<0.25"
+osmnx = ">=2.0.7,<2.1"
