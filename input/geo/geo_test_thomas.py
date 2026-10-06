@@ -35,6 +35,7 @@ def _(ox):
     #place = "Varde, Denmark"
     place = "Aarhus Municipality, Denmark"
 
+    #download graph for place
     copenhagen = ox.geocoder.geocode_to_gdf(place)
 
     copenhagen_G = ox.graph.graph_from_place(
@@ -43,7 +44,7 @@ def _(ox):
         simplify=True, # simplify for less nodes and edges
         retain_all=False, # discard disconnected vertice 
     )
-
+    # convert graph to undirected hoping it is smaller in size
     copenhagen_G = ox.convert.to_undirected(copenhagen_G)
 
     """
@@ -59,6 +60,7 @@ def _(ox):
 
 @app.cell
 def _(copenhagen_G, ox):
+    # create graph displaying nodes and edges
     ox.plot_graph(
         copenhagen_G,
         node_size=0.75,
@@ -70,15 +72,18 @@ def _(copenhagen_G, ox):
 
 @app.cell
 def _(copenhagen_G, ox, place):
+    # choose ammenity
     tags_hospital = {
         "amenity": ["hospital"],
     }
 
+    # extract location of amenities within place
     hospital_features = ox.features.features_from_place(
         place,
         tags_hospital,
     )
 
+    #plot graph of road network
     hospital_fig, hospital_ax = ox.plot.plot_graph(
         copenhagen_G,
         show=False,
@@ -87,7 +92,7 @@ def _(copenhagen_G, ox, place):
         edge_linewidth=0.5,
         node_size=0.75,
     )
-
+    #plot amenitiy on top of road network
     hospital_features.plot(
         column="amenity",
         categorical=True,
@@ -122,15 +127,15 @@ def _(copenhagen_G, hospital_features, ox, pdna):
         hospital_edges[["length"]],
     )
 
-    # Use the hospital features downloaded in the previous cell
+    # reuse features
     hospital_pois = hospital_features.to_crs(hospital_nodes.crs)
 
-    # Convert all hospital geometries to points
+    # Convert all feature geometries to points
     hospital_pois = hospital_pois.copy()
     hospital_pois["geometry"] = hospital_pois.geometry.centroid
 
     # Maximum search distance in meters
-    hospital_search_distance = 10000
+    hospital_search_distance = 50000
 
     # Register hospitals as POIs in Pandana
     hospital_network.set_pois(
@@ -258,13 +263,13 @@ def _(
 
     for feather_r in range(1, feather_model.order + 1):
 
-        # Cosine values
+        # Cos values
         for theta_index in range(feather_model.eval_points):
             feather_columns.append(
                 f"cos_r{feather_r}_theta{theta_index}"
             )
 
-        # Sine values
+        # Sin values
         for theta_index in range(feather_model.eval_points):
             feather_columns.append(
                 f"sin_r{feather_r}_theta{theta_index}"
@@ -337,9 +342,6 @@ def _(
     # Plot FEATHER cosine values
     # ==========================================
 
-    # IMPORTANT:
-    # hospital_nodes came from hospital_projected_graph,
-    # so use the projected graph here too.
     feather_fig, feather_ax = ox.plot_graph(
         hospital_projected_graph,
         node_size=0,
