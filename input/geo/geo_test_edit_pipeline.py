@@ -79,7 +79,7 @@ def _(mo):
 
 
 @app.cell
-def _(config, os, ox):
+def _(config, nx, os, ox):
     place = config["place"]
 
     # City folder - cached
@@ -93,12 +93,14 @@ def _(config, os, ox):
         print(f"Loading cached graph from {graph_path}")
         city_graph = ox.load_graphml(graph_path)
         city_graph = ox.convert.to_undirected(city_graph)
+        city_graph.remove_edges_from(nx.selfloop_edges(city_graph))
     else:
         print(f"Downloading graph for {place} ...")
         city_graph = ox.graph.graph_from_place(
             place, network_type="walk", simplify=True, retain_all=False
         )
         city_graph = ox.convert.to_undirected(city_graph)
+        city_graph.remove_edges_from(nx.selfloop_edges(city_graph))
         ox.save_graphml(city_graph, graph_path)
         print(f"Graph saved to {graph_path}")
 
