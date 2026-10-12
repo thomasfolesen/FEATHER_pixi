@@ -121,7 +121,7 @@ class FEATHER_new:
         Return types:
             * **A_tilde** *(Scipy array)* - The normalized adjacency matrix.
         """
-        A = nx.adjacency_matrix(graph, nodelist = range(graph.number_of_nodes()))
+        A = nx.adjacency_matrix(graph, nodelist = range(graph.number_of_nodes()), weight="weight") 
         D_inverse = self._create_D_inverse(graph) 
         A_tilde = D_inverse.dot(A)
         return A_tilde

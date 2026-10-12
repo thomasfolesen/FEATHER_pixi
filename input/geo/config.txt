@@ -1,0 +1,4 @@
+place = Copenhagen Municipality, Denmark
+theta_max = 2.5
+eval_points = 25
+order = 5
