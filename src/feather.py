@@ -115,14 +115,24 @@ class FEATHER_new:
     def _create_A_tilde(self, graph):
         """
         Creating a sparse normalized adjacency matrix.
-        
+        Define weight as w = 1 / Length (of edge) so shorter edges has bigger probability
+
         Arg types:
             * **graph** *(NetworkX graph)* - The graph to be embedded.
         Return types:
             * **A_tilde** *(Scipy array)* - The normalized adjacency matrix.
         """
+        G = graph.copy()
+
+
+        # Convert distance into similarity strength
+        for u, v, d in G.edges(data=True):
+            # Floor at one metre
+            length = max(float(d.get("length", 1.0)), 1.0)
+            d["weight"] = 1.0 / length # could we do something which discriminate less against 1m vs. 3m small absolut?
+
         A = nx.adjacency_matrix(graph, nodelist = range(graph.number_of_nodes()), weight="weight") 
-        D_inverse = self._create_D_inverse(graph) 
+        D_inverse = self._create_D_inverse(G) 
         A_tilde = D_inverse.dot(A)
         return A_tilde
 
