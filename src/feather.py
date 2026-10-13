@@ -131,7 +131,7 @@ class FEATHER_new:
             length = max(float(d.get("length", 1.0)), 1.0)
             d["weight"] = 1.0 / length # could we do something which discriminate less against 1m vs. 3m small absolut?
 
-        A = nx.adjacency_matrix(graph, nodelist = range(graph.number_of_nodes()), weight="weight") 
+        A = nx.adjacency_matrix(G, nodelist = range(G.number_of_nodes()), weight="weight") 
         D_inverse = self._create_D_inverse(G) 
         A_tilde = D_inverse.dot(A)
         return A_tilde
