@@ -6,15 +6,19 @@ platforms = ["linux-64", "win-64"]
 version = "0.1.0"
 
 [tasks]
+[tasks]
 FEATHER = "python src/main.py --model-type FEATHER"
 FEATHER_new = "python src/main.py --model-type FEATHER_new"
 
 geo_test_edit_thomas = "python -m marimo edit input/geo/geo_test_thomas.py"
 geo_test_edit_pipeline = "python -m marimo edit input/geo/geo_test_edit_pipeline.py"
 geo_test_run_pipeline = "python -m marimo run input/geo/geo_test_edit_pipeline.py"
+
 geo_edit_feathercomp = "python -m marimo edit input/geo/feather_comparison.py"
 geo_run_feathercomp = "python -m marimo run input/geo/feather_comparison.py"
 
+geo_test_5node = "python -m marimo edit input/geo/copenhagen_5node_feather_demo.py"
+geo_test_copenhagen_comparison = "python -m marimo edit input/geo/geo_test_copenhagen_thomas.py"
 
 [dependencies]
 python = "3.10.*"
@@ -27,3 +31,4 @@ texttable = ">=1.7.0,<2"
 marimo = ">=0.24.0,<0.25"
 osmnx = ">=2.0.7,<2.1"
 pandana = ">=0.8,<0.9"
+matplotlib = ">=3.10,<4"
