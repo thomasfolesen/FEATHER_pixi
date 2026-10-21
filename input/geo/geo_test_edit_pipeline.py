@@ -4,6 +4,14 @@ __generated_with = "0.24.0"
 app = marimo.App(width="medium")
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    #geo_test_edit_pipeline
+    """)
+    return
+
+
 @app.cell
 def _():
     import marimo as mo
@@ -15,8 +23,8 @@ def _():
     import numpy as np
     import os
 
-    from src.feather import FEATHER, FEATHER_new
-    from src.config_loader import load_config, load_amenities
+    from FEATHER.feather import FEATHER, FEATHER_new
+    from FEATHER.config_loader import load_config, load_amenities
 
     return (
         FEATHER,

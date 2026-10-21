@@ -1,0 +1,445 @@
+{
+  "version": "1",
+  "metadata": {
+    "marimo_version": "0.24.0",
+    "script_metadata_hash": null
+  },
+  "cells": [
+    {
+      "id": "Hbol",
+      "code_hash": "1d0db38904205bec4d6f6f6a1f6cec3e",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "MJUe",
+      "code_hash": "7d3a26ba55d12ab131244415d19a354a",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h1 id=\"urbanfeather-local-pbf-pipeline\">UrbanFEATHER local-PBF pipeline</h1>\n<span class=\"paragraph\">This notebook has four stages:</span>\n<ol>\n<li><strong>Config</strong> - read places, FEATHER parameters, and OSM amenity categories.</li>\n<li><strong>Local OSM data</strong> - choose a Geofabrik extract, clip a city PBF, build the walking graph, and extract POIs.</li>\n<li><strong>FEATHER features</strong> - calculate each node's network distance to the nearest POI in every category and pass those raw metre values directly into the sine/cosine transform.</li>\n<li><strong>Output</strong> - run <code>FEATHER_new</code>, save one embedding CSV per city, and inspect the results on the street graph.</li>\n</ol>\n<span class=\"paragraph\">The workbook runs automatically when opened. Expensive reusable OSM/graph results are cached under <code>../cache/</code>; raw-metre FEATHER CSV files are written to <code>../output/FEATHER_embeddings_raw_meters/</code>.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "vblA",
+      "code_hash": "e541f73e588bf5377a04ef6631c56706",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "bkHC",
+      "code_hash": "6c1639405190ecb879df6af303fa224f",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/html": "<marimo-callout-output data-html='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eDependencies are available.&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-kind='&quot;success&quot;'></marimo-callout-output>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "lEQa",
+      "code_hash": "8f0b938881649aafb7178b6229b517a9",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "PKri",
+      "code_hash": "283060a35acbed88c244b40fee9a06c4",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "Xref",
+      "code_hash": "4aa5b3ba6719fa4df60814501e62edcf",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "[Errno 2] No such file or directory: '../input/config.txt'",
+          "traceback": null
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stderr",
+          "text": "<span class=\"codehilite\"><div class=\"highlight\"><pre><span></span><span class=\"gt\">Traceback (most recent call last):</span>\n  File <span class=\"nb\">\"/tmp/marimo_7095/__marimo__cell_Xref_.py\"</span>, line <span class=\"m\">1</span>, in <span class=\"n\">&lt;module&gt;</span>\n<span class=\"w\">    </span><span class=\"n\">config</span> <span class=\"o\">=</span> <span class=\"n\">load_config</span><span class=\"p\">(</span><span class=\"n\">CONFIG_PATH</span><span class=\"p\">,</span> <span class=\"n\">DEFAULT_OSM_KEY</span><span class=\"p\">)</span>\n  File <span class=\"nb\">\"/tmp/marimo_7095/__marimo__cell_PKri_.py\"</span>, line <span class=\"m\">14</span>, in <span class=\"n\">load_config</span>\n<span class=\"w\">    </span><span class=\"k\">for</span> <span class=\"n\">line</span> <span class=\"ow\">in</span> <span class=\"n\">path</span><span class=\"o\">.</span><span class=\"n\">read_text</span><span class=\"p\">(</span><span class=\"n\">encoding</span><span class=\"o\">=</span><span class=\"s2\">\"utf-8\"</span><span class=\"p\">)</span><span class=\"o\">.</span><span class=\"n\">splitlines</span><span class=\"p\">():</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/pathlib.py\"</span>, line <span class=\"m\">1134</span>, in <span class=\"n\">read_text</span>\n<span class=\"w\">    </span><span class=\"k\">with</span> <span class=\"bp\">self</span><span class=\"o\">.</span><span class=\"n\">open</span><span class=\"p\">(</span><span class=\"n\">mode</span><span class=\"o\">=</span><span class=\"s1\">'r'</span><span class=\"p\">,</span> <span class=\"n\">encoding</span><span class=\"o\">=</span><span class=\"n\">encoding</span><span class=\"p\">,</span> <span class=\"n\">errors</span><span class=\"o\">=</span><span class=\"n\">errors</span><span class=\"p\">)</span> <span class=\"k\">as</span> <span class=\"n\">f</span><span class=\"p\">:</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/pathlib.py\"</span>, line <span class=\"m\">1119</span>, in <span class=\"n\">open</span>\n<span class=\"w\">    </span><span class=\"k\">return</span> <span class=\"bp\">self</span><span class=\"o\">.</span><span class=\"n\">_accessor</span><span class=\"o\">.</span><span class=\"n\">open</span><span class=\"p\">(</span><span class=\"bp\">self</span><span class=\"p\">,</span> <span class=\"n\">mode</span><span class=\"p\">,</span> <span class=\"n\">buffering</span><span class=\"p\">,</span> <span class=\"n\">encoding</span><span class=\"p\">,</span> <span class=\"n\">errors</span><span class=\"p\">,</span>\n<span class=\"gr\">FileNotFoundError</span>: <span class=\"n\">[Errno 2] No such file or directory: '../input/config.txt'</span>\n</pre></div>\n</span>",
+          "mimetype": "application/vnd.marimo+traceback"
+        }
+      ]
+    },
+    {
+      "id": "SFPL",
+      "code_hash": "e2806c2ec1fcadce21eb4e9b3e228c98",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (FileNotFoundError): ",
+          "traceback": null
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "BYtC",
+      "code_hash": "1ec335714bf602a9958a797441975618",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "RGSE",
+      "code_hash": "ef73fb65cddecbf3d2bc7c38b4ffbd2f",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "Kclp",
+      "code_hash": "4d513ede6ac2a3c0be4f0584047850e2",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "emfo",
+      "code_hash": "8f7318c2290de9beb2929bd284e9711c",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "Hstk",
+      "code_hash": "227b577fe9b4b567b21d45df18bc7b98",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "nWHF",
+      "code_hash": "78e64e1c0e1310d4f1f455e3d4d587f6",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "iLit",
+      "code_hash": "9e4fb096c36839cb2c76a213e08ae87f",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (FileNotFoundError): ",
+          "traceback": null
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "ZHCJ",
+      "code_hash": "25e07b5acfc890e9170548c05713fd57",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (FileNotFoundError): ",
+          "traceback": null
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "ROlb",
+      "code_hash": "7b9e8cbb9620055d482262b364f37205",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (FileNotFoundError): ",
+          "traceback": null
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "qnkX",
+      "code_hash": "f8272a8daaf3a94371c0a4288897e3b6",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (FileNotFoundError): ",
+          "traceback": null
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "TqIu",
+      "code_hash": "73d4d1c1efe2d65f45eff5068152428e",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (FileNotFoundError): ",
+          "traceback": null
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "Vxnm",
+      "code_hash": "59584833b1138e94bd46d7c84407d2e1",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (FileNotFoundError): ",
+          "traceback": null
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "DnEU",
+      "code_hash": "5ad7df6ea77a35295ddb71588063c3e7",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "ulZA",
+      "code_hash": "6a6593d5e197f9dfd1dd352e14f8c7d9",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (FileNotFoundError): ",
+          "traceback": null
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "ecfG",
+      "code_hash": "50bf9094e11bfa34f315ba5943a454ee",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h1 id=\"feather_new\">FEATHER_new</h1>\n<span class=\"paragraph\">For each graph node and accessibility category, the notebook computes the\n<strong>shortest walking-network distance to the nearest POI</strong>. These distances are\npassed to FEATHER_new directly in <strong>metres</strong>. No 20 km scaling or other\nnormalization is applied.</span>\n<span class=\"paragraph\">Therefore the characteristic-function phase is <code>theta * distance_m</code>.\nThis can oscillate very rapidly for large distances; that behaviour is\nintentional in this raw-metres experiment.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "Pvdt",
+      "code_hash": "ac823f531c9d46aede714439fa5613e3",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "ZBYS",
+      "code_hash": "e4fdcb8b38cb1ca05950860be5d3cc74",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (FileNotFoundError): ",
+          "traceback": null
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "aLJB",
+      "code_hash": "6159d4220554000aec7dc96223cfbf7f",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (FileNotFoundError): ",
+          "traceback": null
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "nHfw",
+      "code_hash": "b3f25d5030827ea36a522cee17bb6127",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (FileNotFoundError): ",
+          "traceback": null
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "xXTn",
+      "code_hash": "fc0e37ba67d2d3cab5c40528e296f61e",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (FileNotFoundError): ",
+          "traceback": null
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "AjVT",
+      "code_hash": "ddaa5192f674f3e509bb753f8fee3141",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (FileNotFoundError): ",
+          "traceback": null
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "pHFh",
+      "code_hash": "dfed0612b8766dab773e4773ee6af6d8",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"characteristic-function-explorer\">Characteristic-function explorer</h2>\n<span class=\"paragraph\">The original FEATHER <code>charfun.jpg</code> plots characteristic-function values against the evaluation point <marimo-tex class=\"arithmatex\">||(\\theta||)</marimo-tex>.\nIts two lines are class-wise means and the shaded areas are one standard deviation around those means.</span>\n<span class=\"paragraph\">This urban version uses the same idea. Because the street-network data has no \"popular/unpopular\" class label,\nit compares two groups for the selected amenity category:</span>\n<ul>\n<li><strong>closest nodes</strong>: the selected fraction of nodes with the shortest network distance to the amenity;</li>\n<li><strong>farthest nodes</strong>: the same fraction with the largest network distance.</li>\n</ul>\n<span class=\"paragraph\">In this workbook FEATHER receives raw nearest-amenity distances in metres, so the sine/cosine phase is <code>theta * distance_m</code> with no 20 km scaling.</span>\n<span class=\"paragraph\">The plot reads only the required columns from an existing FEATHER CSV.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "NCOB",
+      "code_hash": "c6f7821f83cbfe7e8fd0fb11976cca48",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (FileNotFoundError): ",
+          "traceback": null
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "aqbW",
+      "code_hash": "844dc197930b0a667fc7e2233c9292b9",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (FileNotFoundError): ",
+          "traceback": null
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "TRpd",
+      "code_hash": "323bc8d6bff99f43297d0040523b95c5",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"cache-layout\">Cache layout</h2>\n<span class=\"paragraph\"><code>../cache/&lt;city&gt;/</code> keeps the city boundary, clipped city PBF, graph pickle, POI GeoJSON, and source metadata. These are the expensive reusable inputs.</span>\n<span class=\"paragraph\">The much larger regional Geofabrik file is temporary. It is downloaded once for all cities that use the same source, clipped into city PBFs, and deleted only after every clip from that source succeeds.</span>\n<ul>\n<li>Set <code>FORCE_REFRESH_CITY_PBF = True</code> to fetch a fresh OSM snapshot.</li>\n<li>Set <code>FORCE_REBUILD_DERIVED = True</code> to rebuild graph and POI caches from the existing city PBF.</li>\n</ul></span>"
+          }
+        }
+      ],
+      "console": []
+    }
+  ]
+}

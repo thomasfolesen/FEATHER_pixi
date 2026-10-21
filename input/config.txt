@@ -1,0 +1,10 @@
+place = [[Copenhagen Municipality, Denmark], [Polla, Salerno, Campania, Italy]]
+theta_max = 20
+eval_points = 15
+order = 2
+learning = [[amenity=university]]
+supplies = [[shop=supermarket], [shop=convenience]]
+eating = [[amenity=restaurant]]
+cultural_activities = [[amenity=cinema]]
+physical_exercise = [[leisure=fitness_centre]]
+healthcare = [[amenity=hospital]]
