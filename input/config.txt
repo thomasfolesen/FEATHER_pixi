@@ -1,10 +1,16 @@
 place = [[Copenhagen Municipality, Denmark], [Polla, Salerno, Campania, Italy]]
-theta_max = 20
+theta_max = 15
 eval_points = 15
-order = 2
-learning = [[amenity=university]]
-supplies = [[shop=supermarket], [shop=convenience]]
-eating = [[amenity=restaurant]]
-cultural_activities = [[amenity=cinema]]
-physical_exercise = [[leisure=fitness_centre]]
-healthcare = [[amenity=hospital]]
+order = 5
+CLIP_BUFFER_M = 2000
+NEAREST_POIS = 10
+outdoor_activities = [[leisure=park], [leisure=playground], [leisure=bathing_place], [leisure=garden], [leisure=pitch], [leisure=stadium], [leisure=swimming_area], [leisure=track], [tourism=picnic_site]]
+learning = [[amenity=college], [amenity=school], [amenity=library], [amenity=kindergarten], [amenity=university], [amenity=training]]
+supplies = [[shop=department_store], [shop=general], [shop=mall], [shop=supermarket], [shop=convenience], [shop=bakery], [shop=butcher], [shop=greengrocer], [shop=books], [shop=stationery], [shop=clothes], [shop=shoes], [shop=appliance], [shop=doityourself], [shop=furniture], [shop=electronics], [shop=houseware]]
+eating = [[amenity=pub], [amenity=cafe], [amenity=restaurant], [amenity=fast_food], [amenity=food_court], [amenity=biergarten]]
+moving = [[public_transport=platform], [public_transport=station], [public_transport=stop_position]]
+cultural_activities = [[amenity=cinema], [amenity=community_centre], [amenity=theatre], [tourism=aquarium], [tourism=gallery], [tourism=museum], [tourism=zoo]]
+physical_exercise = [[leisure=fitness_centre], [leisure=fitness_station], [leisure=sports_centre], [leisure=swimming_pool]]
+services = [[amenity=fire_station], [amenity=police], [amenity=post_office], [post_office=post_partner], [amenity=post_box], [amenity=townhall], [amenity=toilets]]
+healthcare = [[amenity=clinic], [amenity=dentist], [amenity=doctors], [amenity=hospital], [amenity=pharmacy], [amenity=veterinary]]
+financial = [[amenity=atm], [amenity=bank], [amenity=payment_terminal], [amenity=payment_centre]]

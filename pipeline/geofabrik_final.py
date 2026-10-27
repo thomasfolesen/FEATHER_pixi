@@ -9,7 +9,7 @@ def _():
     """
 
     Relative paths start from the directory where you launch Marimo, regardless of where the Python file is located.
-
+    pixi run marimo edit pipeline/geofabrik_final.py
     """
 
 
@@ -76,7 +76,6 @@ def _(Path):
 
     # OSM / Geofabrik settings
     GEOFABRIK_INDEX_URL = "https://download.geofabrik.de/index-v1.json"
-    CLIP_BUFFER_M = 100 #does this mean we only get POI's 100m around the place's geometry?
     NETWORK_TYPE = "walking"
 
     # Cache controls
@@ -85,7 +84,6 @@ def _(Path):
     DELETE_REGIONAL_PBF = True #delete large regional .pbf after creating smaller city file
     return (
         CACHE_ROOT,
-        CLIP_BUFFER_M,
         CONFIG_PATH,
         DELETE_REGIONAL_PBF,
         FORCE_REBUILD_DERIVED,
@@ -142,9 +140,8 @@ def _(re):
             elif key == "theta_max":
                 config[key] = float(value)
 
-            elif key in ("eval_points", "order"):
+            elif key in ("eval_points", "order", "CLIP_BUFFER_M", "NEAREST_POIS"):
                 config[key] = int(value)
-
             else:
                 tags = []
 
@@ -170,17 +167,31 @@ def _(CONFIG_PATH, load_config, pd):
     theta_max = config["theta_max"]
     eval_points = config["eval_points"]
     order = config["order"]
+    CLIP_BUFFER_M = config["CLIP_BUFFER_M"]
+    NEAREST_POIS = config["NEAREST_POIS"]
     resolved_categories = config["resolved_categories"]
+
+    if CLIP_BUFFER_M <= 0:
+        raise ValueError("CLIP_BUFFER_M must be greater than zero.")
 
     config_settings = pd.DataFrame({
         "place": places,
         "theta_max": theta_max,
         "eval_points": eval_points,
         "order": order,
+        "CLIP_BUFFER_M": CLIP_BUFFER_M,
     })
 
     config_settings
-    return eval_points, order, places, resolved_categories, theta_max
+    return (
+        CLIP_BUFFER_M,
+        NEAREST_POIS,
+        eval_points,
+        order,
+        places,
+        resolved_categories,
+        theta_max,
+    )
 
 
 @app.cell
@@ -220,7 +231,7 @@ def _(CACHE_ROOT, CLIP_BUFFER_M, gpd, ox, safe_filename):
         Load cached boundaries for the given place, or create and save them.
 
         OSMnx fetches the municipality boundary if it is not cached.
-        A second boundary is expanded outward by CLIP_BUFFER_M metres (100).
+        A second boundary is expanded outward by CLIP_BUFFER_M metres (2000).
 
         Files are saved in cache/place:
         - municipality_boundary.geojson
@@ -351,7 +362,7 @@ def _(shape):
 
 
 @app.cell
-def _(city_boundaries, pd, safe_filename, select_source):
+def _(CLIP_BUFFER_M, city_boundaries, pd, safe_filename, select_source):
     #function to support downloading graph and POIs for place
     def build_download_plan(places, index):
         """Create a table of source regions, cache paths, and cached city PBF files."""
@@ -365,8 +376,10 @@ def _(city_boundaries, pd, safe_filename, select_source):
             source = select_source(index, boundary["clip_boundary"])
 
             # Set the path where the clipped city data will be stored.
-            city_pbf_path = boundary["city_dir"] / f"{safe_filename(place)}.osm.pbf"
-
+            city_pbf_path = (
+                boundary["city_dir"]
+                / f"{safe_filename(place)}_buffer_{CLIP_BUFFER_M}m.osm.pbf"
+            )
             # Add one row describing this city's download plan.
             rows.append({
                 "place": place,
@@ -477,11 +490,23 @@ def _(
 
 
 @app.cell
-def _(FORCE_REBUILD_DERIVED, NETWORK_TYPE, OSM, nx, ox, pickle, time):
+def _(
+    CLIP_BUFFER_M,
+    FORCE_REBUILD_DERIVED,
+    NETWORK_TYPE,
+    OSM,
+    nx,
+    ox,
+    pickle,
+    time,
+):
     def build_graph_from_pbf(place, city_pbf_path, city_dir):
         """Build or load a simplified, undirected walking graph."""
         started = time.time()
-        cache_path = city_dir / f"city_graph_{NETWORK_TYPE}_simplified_undirected.pkl"
+        cache_path = (
+            city_dir
+            / f"city_graph_{NETWORK_TYPE}_buffer_{CLIP_BUFFER_M}m_simplified_undirected.pkl"
+        )
 
         if cache_path.exists() and not FORCE_REBUILD_DERIVED:
             print(f"Loading cached graph for {place}")
@@ -540,13 +565,15 @@ def _(FORCE_REBUILD_DERIVED, NETWORK_TYPE, OSM, nx, ox, pickle, time):
 
 
 @app.cell
-def _(FORCE_REBUILD_DERIVED, OSM, gpd, pd):
+def _(CLIP_BUFFER_M, FORCE_REBUILD_DERIVED, OSM, gpd, pd):
     def extract_pois_from_city_pbf(
         place, city_pbf_path, city_dir, exact_boundary_path, resolved_categories
     ):
         """Extract configured POIs inside the city boundary, or load cached POIs."""
-        poi_path = city_dir / "accessibility_pois.geojson"
-
+        poi_path = (
+            city_dir
+            / f"accessibility_pois_buffer_{CLIP_BUFFER_M}m.geojson"
+        )
         if poi_path.exists() and not FORCE_REBUILD_DERIVED:
             print(f"Loading cached POIs for {place}")
             features = gpd.read_file(poi_path)
@@ -674,7 +701,7 @@ def _(build_graph_from_pbf, extract_pois_from_city_pbf, pd):
                 place,
                 city_pbf,
                 city_dir,
-                city["exact_boundary_path"],
+                city["clip_boundary_path"],
                 resolved_categories,
             )
 
@@ -724,6 +751,45 @@ def _(
         download_plan_df, resolved_categories
     )
     return graphs, poi_results
+
+
+@app.cell
+def _(download_plan_df, gpd, graphs):
+    buffered_graphs = graphs
+    municipality_graphs = {}
+
+    for _city in download_plan_df.to_dict(orient="records"):
+        _place = _city["place"]
+        _data = buffered_graphs[_place]
+
+        _boundary = (
+            gpd.read_file(_city["exact_boundary_path"])
+            .to_crs(_data["nodes"].crs)
+            .geometry.union_all()
+        )
+
+        _inside = _data["nodes"].geometry.apply(_boundary.covers)
+        _node_ids = _data["nodes"].index[_inside]
+
+        _graph = _data["graph"].subgraph(_node_ids).copy()
+        _projected_graph = (
+            _data["projected_graph"].subgraph(_node_ids).copy()
+        )
+
+        _edges = _data["edges"]
+        _keep_edges = (
+            _edges.index.get_level_values("u").isin(_node_ids)
+            & _edges.index.get_level_values("v").isin(_node_ids)
+        )
+
+        municipality_graphs[_place] = {
+            **_data,
+            "graph": _graph,
+            "projected_graph": _projected_graph,
+            "nodes": _data["nodes"].loc[_node_ids].copy(),
+            "edges": _edges.loc[_keep_edges].copy(),
+        }
+    return buffered_graphs, municipality_graphs
 
 
 @app.cell
@@ -795,21 +861,28 @@ def _(
 
 
 @app.cell
-def _(pd, pdna):
+def _(CLIP_BUFFER_M, NEAREST_POIS, np, pd, pdna):
     def calculate_poi_distances(graph_data, pois, categories):
         nodes = graph_data["nodes"]
+
         roads = (
             graph_data["edges"]
             .reset_index()
             .sort_values("length")
             .drop_duplicates(["u", "v"])
         )
+
         pois = pois.to_crs(nodes.crs)
 
-        if roads["length"].isna().any() or (roads["length"] < 0).any():
-            raise ValueError("Road lengths must be non-negative numbers in metres.")
+        if (
+            not np.isfinite(roads["length"]).all()
+            or (roads["length"] < 0).any()
+        ):
+            raise ValueError(
+                "Road lengths must be finite, non-negative metres."
+            )
 
-        print("Preparing the walking network...", flush=True)
+        print("Preparing the buffered walking network...", flush=True)
 
         network = pdna.Network(
             node_x=nodes.geometry.x,
@@ -820,51 +893,50 @@ def _(pd, pdna):
             twoway=True,
         )
 
-        print("Walking network ready.", flush=True)
-
-        distances = pd.DataFrame(index=nodes.index)
-        maximum_distance = float(roads["length"].sum()) + 1
+        distances = pd.DataFrame(
+            index=nodes.index,
+            columns=list(categories),
+            dtype=float,
+        )
 
         for category in categories:
-            destinations = pois[pois["category"] == category]
-            distances[category] = float("nan")
+            destinations = (
+                pois[pois["category"] == category]
+                .drop_duplicates(subset=["osm_type", "osm_id"])
+            )
 
             if destinations.empty:
                 print(f"{category}: no POIs found.", flush=True)
                 continue
 
-            # Start small and expand until every node has a distance.
-            search_distance = min(2000, maximum_distance)
+            print(
+                f"{category}: finding up to {NEAREST_POIS} nearest POIs "
+                f"within {CLIP_BUFFER_M:,} metres...",
+                flush=True,
+            )
 
-            while True:
-                print(
-                    f"{category}: searching within {search_distance:,.0f} metres...",
-                    flush=True,
-                )
+            network.set_pois(
+                category=category,
+                maxdist=CLIP_BUFFER_M,
+                maxitems=NEAREST_POIS,
+                x_col=destinations.geometry.x,
+                y_col=destinations.geometry.y,
+            )
 
-                network.set_pois(
-                    category=category,
-                    maxdist=search_distance,
-                    maxitems=1,
-                    x_col=destinations.geometry.x,
-                    y_col=destinations.geometry.y,
-                )
+            nearest = network.nearest_pois(
+                distance=CLIP_BUFFER_M,
+                category=category,
+                num_pois=NEAREST_POIS,
+                max_distance=-1,
+            )
 
-                nearest = network.nearest_pois(
-                    distance=search_distance,
-                    category=category,
-                    num_pois=1,
-                    max_distance=-1,
-                )[1]
+            # Missing neighbours are returned as -1.
+            nearest = nearest.where(
+                (nearest >= 0) & (nearest <= CLIP_BUFFER_M)
+            )
 
-                missing = (nearest == -1).sum()
-                print(f"  Nodes without a distance: {missing:,}", flush=True)
-
-                if missing == 0 or search_distance >= maximum_distance:
-                    distances[category] = nearest.replace(-1, float("nan"))
-                    break
-
-                search_distance = min(search_distance * 2, maximum_distance)
+            # Average available neighbours; no neighbours gives NaN.
+            distances[category] = nearest.mean(axis=1)
 
         return distances
 
@@ -872,21 +944,37 @@ def _(pd, pdna):
 
 
 @app.cell
-def _(plt):
+def _(CACHE_ROOT, CLIP_BUFFER_M, NEAREST_POIS, gpd, np, plt, safe_filename):
     def save_distance_map(place, category, graph_data, distances, folder):
         nodes = graph_data["nodes"].copy()
         nodes["distance"] = distances.reindex(nodes.index)
         category_name = category.replace("_", " ")
 
+        folder.mkdir(parents=True, exist_ok=True)
+        image_path = folder / f"distance_to_{category}.png"
+
         with plt.style.context("default"):
             fig, ax = plt.subplots(figsize=(14, 11))
 
-            graph_data["edges"].plot(
-                ax=ax,
-                color="#dddddd",
-                linewidth=0.4,
-                zorder=1,
+            boundary = (
+                gpd.read_file(
+                    CACHE_ROOT
+                    / safe_filename(place)
+                    / "municipality_boundary.geojson"
+                )
+                .to_crs(graph_data["edges"].crs)
+                .geometry.union_all()
             )
+
+            display_edges = gpd.clip(graph_data["edges"], boundary)
+
+            if not display_edges.empty:
+                display_edges.plot(
+                    ax=ax,
+                    color="#dddddd",
+                    linewidth=0.4,
+                    zorder=1,
+                )
 
             missing = nodes[nodes["distance"].isna()]
             available = nodes[nodes["distance"].notna()]
@@ -896,7 +984,7 @@ def _(plt):
                     ax=ax,
                     color="#999999",
                     markersize=8,
-                    label="No reachable POI",
+                    label=f"No reachable POI within {CLIP_BUFFER_M:,} m",
                     zorder=2,
                 )
                 ax.legend()
@@ -907,32 +995,37 @@ def _(plt):
                     column="distance",
                     cmap="viridis",
                     vmin=0,
-                    vmax=max(float(available["distance"].max()), 1),
+                    vmax=CLIP_BUFFER_M,
                     markersize=8,
                     zorder=3,
                     legend=True,
                     legend_kwds={
-                        "label": "Walking-network distance (metres)",
+                        "label": "Mean walking distance (metres)",
+                        "ticks": np.linspace(0, CLIP_BUFFER_M, 5),
                         "shrink": 0.7,
                     },
                 )
 
             ax.set_title(
-                f"{place}\nDistance to closest {category_name} POI",
+                f"{place}\n"
+                f"Mean distance to up to {NEAREST_POIS} nearest "
+                f"{category_name} POIs",
                 fontsize=15,
             )
             ax.set_axis_off()
 
             fig.text(
-                0.5, 0.02,
-                "Distance follows the walking network to the node representing each POI.\n"
-                "The gap from that node to the POI is excluded. "
-                "Only POIs inside the municipality are included.",
+                0.5,
+                0.02,
+                (
+                    f"Mean over up to {NEAREST_POIS} POIs reachable within "
+                    f"{CLIP_BUFFER_M:,} m; unavailable neighbours are excluded.\n"
+                    "Routes and POIs may extend outside the municipality. "
+                    "POI-to-network snapping distance is excluded."
+                ),
                 ha="center",
                 fontsize=10,
             )
-
-            image_path = folder / f"distance_to_{category}.png"
 
             fig.savefig(
                 image_path,
@@ -951,8 +1044,9 @@ def _(plt):
 @app.cell
 def _(
     CONFIG_PATH,
+    buffered_graphs,
     calculate_poi_distances,
-    graphs,
+    municipality_graphs,
     places,
     poi_results,
     resolved_categories,
@@ -965,10 +1059,14 @@ def _(
     for _place in places:
         print(f"Calculating walking distances for {_place}...", flush=True)
 
-        distance_tables[_place] = calculate_poi_distances(
-            graphs[_place],
+        _buffered_distances = calculate_poi_distances(
+            buffered_graphs[_place],
             poi_results[_place]["features"],
             resolved_categories,
+        )
+    
+        distance_tables[_place] = _buffered_distances.reindex(
+            municipality_graphs[_place]["nodes"].index
         )
 
         _folder = _output / safe_filename(_place)
@@ -978,7 +1076,7 @@ def _(
             _image_path = save_distance_map(
                 _place,
                 _category,
-                graphs[_place],
+                municipality_graphs[_place],
                 distance_tables[_place][_category],
                 _folder,
             )
@@ -990,7 +1088,7 @@ def _(
 
 
 @app.cell
-def _(np, nx):
+def _(CLIP_BUFFER_M, np, nx):
     def prepare_feather_inputs(graph, distances, categories):
         node_ids = list(graph.nodes)
 
@@ -1005,8 +1103,10 @@ def _(np, nx):
         if (features < 0).any().any():
             raise ValueError("Distances cannot be negative.")
 
-        # Treat missing amenities and distances beyond 5 km equally.
-        features = features.clip(upper=5000).fillna(5000)
+        # Treat missing amenities and distances beyond 2 km equally.
+        features = features.clip(
+            upper=CLIP_BUFFER_M
+        ).fillna(CLIP_BUFFER_M)
 
         node_numbers = {
             node_id: position
@@ -1016,7 +1116,7 @@ def _(np, nx):
 
         return {
             "graph": numbered_graph,
-            "features": features.to_numpy(dtype=float) / 1000,
+            "features": features.to_numpy(dtype=float) / CLIP_BUFFER_M,
             "node_ids": node_ids,
             "categories": list(categories),
         }
@@ -1027,7 +1127,7 @@ def _(np, nx):
 @app.cell
 def _(
     distance_tables,
-    graphs,
+    municipality_graphs,
     pd,
     places,
     prepare_feather_inputs,
@@ -1037,7 +1137,7 @@ def _(
 
     for _place in places:
         feather_inputs[_place] = prepare_feather_inputs(
-            graph=graphs[_place]["graph"],
+            graph=municipality_graphs[_place]["graph"],
             distances=distance_tables[_place],
             categories=resolved_categories,
         )
@@ -1183,13 +1283,112 @@ def _(CONFIG_PATH, feather_embeddings, safe_filename):
     )
 
     for _place, _embedding in feather_embeddings.items():
-        _place_folder = _embedding_folder / safe_filename(_place)
+        _place_name = safe_filename(_place)
+        _place_folder = _embedding_folder / _place_name
         _place_folder.mkdir(parents=True, exist_ok=True)
 
-        _file = _place_folder / "embeddings.csv"
+        _file = _place_folder / f"{_place_name}_feather_embeddings.csv"
         _embedding.to_csv(_file, index=True)
 
+        print(f"{_place} saved in: {_file.resolve()}")
+    return
+
+
+@app.cell
+def _(
+    CONFIG_PATH,
+    eval_points,
+    feather_embeddings,
+    feather_inputs,
+    mo,
+    np,
+    order,
+    plt,
+    safe_filename,
+    theta_max,
+):
+    _order_figures = []
+    _order_output = CONFIG_PATH.parent.parent / "output" / "FEATHER_curves"
+
+    # Match the evaluation points used inside FEATHER_new.
+    _theta = np.linspace(0.01, theta_max, eval_points)
+
+    for _place, _embedding in feather_embeddings.items():
+        _categories = feather_inputs[_place]["categories"]
+
+        _values = _embedding.to_numpy().reshape(
+            len(_embedding),
+            order,
+            2,
+            len(_categories),
+            eval_points,
+        )
+
+        _means = _values.mean(axis=0)
+
+        _fig, _axes = plt.subplots(
+            len(_categories),
+            2,
+            figsize=(16, 4 * len(_categories)),
+            squeeze=False,
+        )
+
+        for _category_index, _category in enumerate(_categories):
+            _category_label = _category.replace("_", " ").title()
+
+            for _component, _component_name in enumerate(
+                ["Real (cosine)", "Imaginary (sine)"]
+            ):
+                _ax = _axes[_category_index, _component]
+
+                for _step in range(order):
+                    _ax.plot(
+                        _theta,
+                        _means[_step, _component, _category_index],
+                        color=plt.get_cmap("tab10")(_step % 10),
+                        linestyle=["-", "--", "-.", ":"][_step % 4],
+                        marker=["o", "s", "^", "D", "x"][_step % 5],
+                        markerfacecolor="none",
+                        markersize=5,
+                        linewidth=1.5,
+                        label=f"r = {_step + 1}",
+                    )
+
+                _ax.set_title(
+                    f"{_category_label} — {_component_name}",
+                    fontsize=13,
+                )
+                _ax.set_xlabel("Evaluation point θ")
+                _ax.set_ylabel("Mean across nodes")
+                _ax.set_ylim(-1.05, 1.05)
+                _ax.axhline(0, color="grey", linewidth=0.6)
+                _ax.grid(alpha=0.25)
+                _ax.legend(title="Order", fontsize=8)
+
+        _fig.suptitle(
+            f"{_place}\nFEATHER means by amenity category and order",
+            fontsize=16,
+        )
+        _fig.tight_layout(rect=(0, 0, 1, 0.97))
+
+        _folder = _order_output / safe_filename(_place)
+        _folder.mkdir(parents=True, exist_ok=True)
+
+        _file = _folder / "feather_all_orders.png"
+
+        _fig.savefig(
+            _file,
+            dpi=200,
+            bbox_inches="tight",
+            facecolor="white",
+        )
+
+        _order_figures.append(mo.as_html(_fig))
+        plt.close(_fig)
+
         print(f"Saved: {_file.resolve()}")
+
+    mo.vstack(_order_figures)
     return
 
 
