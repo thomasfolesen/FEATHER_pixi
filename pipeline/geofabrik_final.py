@@ -35,6 +35,7 @@ def _():
     import requests
     from shapely.geometry import shape
     import pandana as pdna
+    import plotly.graph_objects as go
 
 
     """
@@ -49,6 +50,7 @@ def _():
         FEATHER_new,
         OSM,
         Path,
+        go,
         gpd,
         json,
         mo,
@@ -77,6 +79,7 @@ def _(Path):
     # OSM / Geofabrik settings
     GEOFABRIK_INDEX_URL = "https://download.geofabrik.de/index-v1.json"
     NETWORK_TYPE = "walking"
+    GEOFABRIK_WAIT_SECONDS = 60
 
     # Cache controls
     FORCE_REFRESH_CITY_PBF = False #reuse cached .pbf
@@ -89,6 +92,7 @@ def _(Path):
         FORCE_REBUILD_DERIVED,
         FORCE_REFRESH_CITY_PBF,
         GEOFABRIK_INDEX_URL,
+        GEOFABRIK_WAIT_SECONDS,
         NETWORK_TYPE,
     )
 
@@ -160,7 +164,7 @@ def _(re):
 
 
 @app.cell
-def _(CONFIG_PATH, load_config, pd):
+def _(CONFIG_PATH, load_config):
     config = load_config(CONFIG_PATH)
 
     places = config["places"]
@@ -171,18 +175,30 @@ def _(CONFIG_PATH, load_config, pd):
     NEAREST_POIS = config["NEAREST_POIS"]
     resolved_categories = config["resolved_categories"]
 
-    if CLIP_BUFFER_M <= 0:
-        raise ValueError("CLIP_BUFFER_M must be greater than zero.")
 
-    config_settings = pd.DataFrame({
-        "place": places,
-        "theta_max": theta_max,
-        "eval_points": eval_points,
-        "order": order,
-        "CLIP_BUFFER_M": CLIP_BUFFER_M,
-    })
+    print("\n" + "=" * 69)
+    print("CONFIGURATION")
+    print("=" * 69)
 
-    config_settings
+    print("\nFEATHER settings")
+    print(f"  Maximum theta:           {theta_max}")
+    print(f"  Evaluation points:       {eval_points}")
+    print(f"  Order:                   {order}")
+
+    print("\nPOI and boundary settings")
+    print(f"  Boundary buffer:         {CLIP_BUFFER_M:,} metres")
+    print(f"  Nearest POIs for mean calc.:            {NEAREST_POIS}")
+
+    print(f"\nPlaces ({len(places)})")
+    for _place in places:
+        print(f"  • {_place}")
+
+    print("\nResolved POI categories")
+    for _category, _pois in resolved_categories.items():
+        print(f"  {_category}:")
+        print(f"    {_pois}")
+
+    print("\n" + "=" * 69)
     return (
         CLIP_BUFFER_M,
         NEAREST_POIS,
@@ -203,7 +219,14 @@ def _(re):
 
 
 @app.cell
-def _(CACHE_ROOT, GEOFABRIK_INDEX_URL, json, requests):
+def _(
+    CACHE_ROOT,
+    GEOFABRIK_INDEX_URL,
+    GEOFABRIK_WAIT_SECONDS,
+    json,
+    requests,
+    time,
+):
     #function to support downloading graph and POIs for place
     def get_geofabrik_index():
         """
@@ -214,9 +237,20 @@ def _(CACHE_ROOT, GEOFABRIK_INDEX_URL, json, requests):
         index_path.parent.mkdir(parents=True, exist_ok=True)
 
         if not index_path.exists():
+            print(
+                f"Waiting {GEOFABRIK_WAIT_SECONDS} seconds "
+                "before downloading the Geofabrik index to make sure we are not temp. blocked for too much trafic",
+                flush=True,
+            )
+            time.sleep(GEOFABRIK_WAIT_SECONDS)
+
             response = requests.get(GEOFABRIK_INDEX_URL, timeout=60)
             response.raise_for_status()
-            index_path.write_bytes(response.content)#write to disk
+            index_path.write_bytes(response.content)
+
+            print("Geofabrik index downloaded.", flush=True)
+        else:
+            print("Using cached Geofabrik index.", flush=True)
 
         return json.loads(index_path.read_text(encoding="utf-8"))
 
@@ -397,14 +431,16 @@ def _(CLIP_BUFFER_M, city_boundaries, pd, safe_filename, select_source):
 
 
 @app.cell
-def _(requests):
+def _(requests, time):
     #function to support downloading graph and POIs for place
     def download_pbf(url, destination):
         if destination.exists():
+            print(f"Using cached file for {destination.name}", flush=True)
             return
 
         destination.parent.mkdir(parents=True, exist_ok=True)
-
+        print(f"No cached file found for {destination.name}, so let us download it after waiting 60 sek", flush=True)
+        time.sleep(60) #wait 60 sek before calling Geofabrik
         with requests.get(url, stream=True, timeout=900) as response:
             response.raise_for_status()
             with destination.open("wb") as file:
@@ -1064,7 +1100,7 @@ def _(
             poi_results[_place]["features"],
             resolved_categories,
         )
-    
+
         distance_tables[_place] = _buffered_distances.reindex(
             municipality_graphs[_place]["nodes"].index
         )
@@ -1389,6 +1425,239 @@ def _(
         print(f"Saved: {_file.resolve()}")
 
     mo.vstack(_order_figures)
+    return
+
+
+@app.cell
+def _(distance_tables, mo, resolved_categories):
+    distance_city = mo.ui.dropdown(
+        options=list(distance_tables),
+        value=next(iter(distance_tables)),
+        label="City",
+    )
+
+    distance_category = mo.ui.dropdown(
+        options=list(resolved_categories),
+        value=next(iter(resolved_categories)),
+        label="POI category",
+    )
+
+    mo.hstack([distance_city, distance_category])
+    return distance_category, distance_city
+
+
+@app.cell
+def _(
+    CACHE_ROOT,
+    CLIP_BUFFER_M,
+    NEAREST_POIS,
+    distance_category,
+    distance_city,
+    distance_tables,
+    go,
+    gpd,
+    mo,
+    municipality_graphs,
+    safe_filename,
+):
+    _place = distance_city.value
+    _category = distance_category.value
+    _category_name = _category.replace("_", " ")
+
+    _graph_data = municipality_graphs[_place]
+    _nodes = _graph_data["nodes"].copy()
+    _nodes["distance"] = distance_tables[_place][_category].reindex(_nodes.index)
+
+    # Clip the displayed roads to the municipality boundary.
+    _boundary = (
+        gpd.read_file(
+            CACHE_ROOT
+            / safe_filename(_place)
+            / "municipality_boundary.geojson"
+        )
+        .to_crs(_nodes.crs)
+        .geometry.union_all()
+    )
+
+    _edges = gpd.clip(
+        _graph_data["edges"].to_crs(_nodes.crs),
+        _boundary,
+    )
+
+    # Combine road geometries into a single Plotly layer.
+    _road_x = []
+    _road_y = []
+
+    for _geometry in _edges.geometry:
+        if _geometry is None or _geometry.is_empty:
+            continue
+
+        _lines = (
+            list(_geometry.geoms)
+            if _geometry.geom_type == "MultiLineString"
+            else [_geometry]
+        )
+
+        for _line in _lines:
+            if _line.geom_type != "LineString":
+                continue
+
+            _x, _y = _line.xy
+            _road_x.extend(list(_x) + [None])
+            _road_y.extend(list(_y) + [None])
+
+    _distance_fig = go.Figure()
+
+    _distance_fig.add_trace(
+        go.Scattergl(
+            x=_road_x,
+            y=_road_y,
+            mode="lines",
+            line=dict(color="#dddddd", width=1),
+            hoverinfo="skip",
+            showlegend=False,
+        )
+    )
+
+    _missing = _nodes[_nodes["distance"].isna()]
+    _available = _nodes[_nodes["distance"].notna()]
+
+    if not _missing.empty:
+        _distance_fig.add_trace(
+            go.Scattergl(
+                x=_missing.geometry.x,
+                y=_missing.geometry.y,
+                mode="markers",
+                marker=dict(size=5, color="#999999"),
+                name="No reachable POI",
+                hovertemplate=(
+                    f"<b>{_place}</b><br>"
+                    f"Category: {_category_name}<br>"
+                    f"No reachable POI within {CLIP_BUFFER_M:,} m"
+                    "<extra></extra>"
+                ),
+            )
+        )
+
+    if not _available.empty:
+        _distance_fig.add_trace(
+            go.Scattergl(
+                x=_available.geometry.x,
+                y=_available.geometry.y,
+                mode="markers",
+                customdata=_available["distance"].to_numpy(),
+                marker=dict(
+                    size=5,
+                    color=_available["distance"],
+                    colorscale="Viridis",
+                    cmin=0,
+                    cmax=CLIP_BUFFER_M,
+                    colorbar=dict(
+                        title=dict(text="Mean walking<br>distance (m)")
+                    ),
+                ),
+                showlegend=False,
+                hovertemplate=(
+                    f"<b>{_place}</b><br>"
+                    f"Category: {_category_name}<br>"
+                    "Mean walking distance: %{customdata:.1f} m"
+                    "<extra></extra>"
+                ),
+            )
+        )
+
+    _distance_fig.update_layout(
+        title=dict(
+            text=(
+                f"{_place}<br>"
+                f"<sup>Mean distance to up to {NEAREST_POIS} nearest "
+                f"{_category_name} POIs</sup>"
+            )
+        ),
+        template="plotly_white",
+        height=750,
+        margin=dict(l=10, r=20, t=90, b=50),
+        dragmode="pan",
+        hovermode="closest",
+        xaxis=dict(visible=False),
+        yaxis=dict(
+            visible=False,
+            scaleanchor="x",
+            scaleratio=1,
+        ),
+        legend=dict(
+            orientation="h",
+            y=-0.02,
+            x=0,
+        ),
+    )
+
+    mo.ui.plotly(
+        _distance_fig,
+        config={
+            "scrollZoom": True,
+            "displaylogo": False,
+        },
+    )
+    return
+
+
+@app.cell
+def _(
+    CACHE_ROOT,
+    CLIP_BUFFER_M,
+    CONFIG_PATH,
+    NEAREST_POIS,
+    distance_tables,
+    gpd,
+    municipality_graphs,
+    pickle,
+    places,
+    safe_filename,
+):
+    _map_folder = (
+        CONFIG_PATH.parent.parent / "output" / "interactive_map_data"
+    )
+    _map_folder.mkdir(parents=True, exist_ok=True)
+
+    for _place in places:
+        _graph_data = municipality_graphs[_place]
+
+        # Use metre-based coordinates so the map keeps correct proportions.
+        _nodes = _graph_data["nodes"]
+        _map_crs = _nodes.estimate_utm_crs()
+        _nodes = _nodes[["geometry"]].to_crs(_map_crs)
+
+        _boundary = (
+            gpd.read_file(
+                CACHE_ROOT
+                / safe_filename(_place)
+                / "municipality_boundary.geojson"
+            )
+            .to_crs(_map_crs)
+            .geometry.union_all()
+        )
+
+        _edges = gpd.clip(
+            _graph_data["edges"][["geometry"]].to_crs(_map_crs),
+            _boundary,
+        )
+
+        _map_data = {
+            "place": _place,
+            "nodes": _nodes,
+            "edges": _edges,
+            "distances": distance_tables[_place],
+            "CLIP_BUFFER_M": CLIP_BUFFER_M,
+            "NEAREST_POIS": NEAREST_POIS,
+        }
+
+        _file_path = _map_folder / f"{safe_filename(_place)}.pkl"
+
+        with _file_path.open("wb") as _file:
+            pickle.dump(_map_data, _file)
+
+        print(f"Saved interactive map data: {_file_path}", flush=True)
     return
 
 

@@ -7,7 +7,7 @@
   "cells": [
     {
       "id": "Hbol",
-      "code_hash": "0027b0afd6e7e652ffc8a18edb1e9343",
+      "code_hash": "093d14ed7894dbde42cf56255d14b918",
       "outputs": [
         {
           "type": "data",
@@ -20,7 +20,7 @@
     },
     {
       "id": "MJUe",
-      "code_hash": "3c1b1a639e44b406fabe49006af0c94f",
+      "code_hash": "477e0e2b372097ee89c9ce84db56019a",
       "outputs": [
         {
           "type": "data",
@@ -46,16 +46,23 @@
     },
     {
       "id": "bkHC",
-      "code_hash": "1bd0981bd30c286283a789c1f6df29a8",
+      "code_hash": "5183edff255630ff724dabdcc4f75f2b",
       "outputs": [
         {
           "type": "data",
           "data": {
-            "text/html": "<marimo-ui-element object-id='bkHC-0' random-id='95241abc-3306-ce0f-3521-a06f9fc12dfb'><marimo-table data-initial-value='[]' data-label='null' data-data='&quot;[{&#92;&quot;place&#92;&quot;:&#92;&quot;Copenhagen Municipality, Denmark&#92;&quot;,&#92;&quot;theta_max&#92;&quot;:15.0,&#92;&quot;eval_points&#92;&quot;:15,&#92;&quot;order&#92;&quot;:5,&#92;&quot;CLIP_BUFFER_M&#92;&quot;:2000},{&#92;&quot;place&#92;&quot;:&#92;&quot;Polla, Salerno, Campania, Italy&#92;&quot;,&#92;&quot;theta_max&#92;&quot;:15.0,&#92;&quot;eval_points&#92;&quot;:15,&#92;&quot;order&#92;&quot;:5,&#92;&quot;CLIP_BUFFER_M&#92;&quot;:2000}]&quot;' data-total-rows='2' data-total-columns='5' data-max-columns='50' data-banner-text='&quot;&quot;' data-pagination='false' data-page-size='10' data-field-types='[[&quot;place&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;theta_max&quot;,[&quot;number&quot;,&quot;float64&quot;]],[&quot;eval_points&quot;,[&quot;integer&quot;,&quot;int64&quot;]],[&quot;order&quot;,[&quot;integer&quot;,&quot;int64&quot;]],[&quot;CLIP_BUFFER_M&quot;,[&quot;integer&quot;,&quot;int64&quot;]]]' data-show-filters='true' data-show-download='true' data-show-search='true' data-show-column-summaries='false' data-show-data-types='true' data-show-page-size-selector='false' data-show-column-explorer='true' data-show-chart-builder='true' data-row-headers='[]' data-hidden-columns='[]' data-has-stable-row-id='false' data-lazy='false' data-preload='false'></marimo-table></marimo-ui-element>"
+            "text/plain": ""
           }
         }
       ],
-      "console": []
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\n=====================================================================\nCONFIGURATION\n=====================================================================\n\nFEATHER settings\n  Maximum theta:           15.0\n  Evaluation points:       15\n  Order:                   5\n\nPOI and boundary settings\n  Boundary buffer:         2,000 metres\n  Nearest POIs for mean calc.:            10\n\nPlaces (2)\n  \u2022 Copenhagen Municipality, Denmark\n  \u2022 Polla, Salerno, Campania, Italy\n\nResolved POI categories\n  outdoor_activities:\n    [{'osm_key': 'leisure', 'osm_tag': 'park'}, {'osm_key': 'leisure', 'osm_tag': 'playground'}, {'osm_key': 'leisure', 'osm_tag': 'bathing_place'}, {'osm_key': 'leisure', 'osm_tag': 'garden'}, {'osm_key': 'leisure', 'osm_tag': 'pitch'}, {'osm_key': 'leisure', 'osm_tag': 'stadium'}, {'osm_key': 'leisure', 'osm_tag': 'swimming_area'}, {'osm_key': 'leisure', 'osm_tag': 'track'}, {'osm_key': 'tourism', 'osm_tag': 'picnic_site'}]\n  learning:\n    [{'osm_key': 'amenity', 'osm_tag': 'college'}, {'osm_key': 'amenity', 'osm_tag': 'school'}, {'osm_key': 'amenity', 'osm_tag': 'library'}, {'osm_key': 'amenity', 'osm_tag': 'kindergarten'}, {'osm_key': 'amenity', 'osm_tag': 'university'}, {'osm_key': 'amenity', 'osm_tag': 'training'}]\n  supplies:\n    [{'osm_key': 'shop', 'osm_tag': 'department_store'}, {'osm_key': 'shop', 'osm_tag': 'general'}, {'osm_key': 'shop', 'osm_tag': 'mall'}, {'osm_key': 'shop', 'osm_tag': 'supermarket'}, {'osm_key': 'shop', 'osm_tag': 'convenience'}, {'osm_key': 'shop', 'osm_tag': 'bakery'}, {'osm_key': 'shop', 'osm_tag': 'butcher'}, {'osm_key': 'shop', 'osm_tag': 'greengrocer'}, {'osm_key': 'shop', 'osm_tag': 'books'}, {'osm_key': 'shop', 'osm_tag': 'stationery'}, {'osm_key': 'shop', 'osm_tag': 'clothes'}, {'osm_key': 'shop', 'osm_tag': 'shoes'}, {'osm_key': 'shop', 'osm_tag': 'appliance'}, {'osm_key': 'shop', 'osm_tag': 'doityourself'}, {'osm_key': 'shop', 'osm_tag': 'furniture'}, {'osm_key': 'shop', 'osm_tag': 'electronics'}, {'osm_key': 'shop', 'osm_tag': 'houseware'}]\n  eating:\n    [{'osm_key': 'amenity', 'osm_tag': 'pub'}, {'osm_key': 'amenity', 'osm_tag': 'cafe'}, {'osm_key': 'amenity', 'osm_tag': 'restaurant'}, {'osm_key': 'amenity', 'osm_tag': 'fast_food'}, {'osm_key': 'amenity', 'osm_tag': 'food_court'}, {'osm_key': 'amenity', 'osm_tag': 'biergarten'}]\n  moving:\n    [{'osm_key': 'public_transport', 'osm_tag': 'platform'}, {'osm_key': 'public_transport', 'osm_tag': 'station'}, {'osm_key': 'public_transport', 'osm_tag': 'stop_position'}]\n  cultural_activities:\n    [{'osm_key': 'amenity', 'osm_tag': 'cinema'}, {'osm_key': 'amenity', 'osm_tag': 'community_centre'}, {'osm_key': 'amenity', 'osm_tag': 'theatre'}, {'osm_key': 'tourism', 'osm_tag': 'aquarium'}, {'osm_key': 'tourism', 'osm_tag': 'gallery'}, {'osm_key': 'tourism', 'osm_tag': 'museum'}, {'osm_key': 'tourism', 'osm_tag': 'zoo'}]\n  physical_exercise:\n    [{'osm_key': 'leisure', 'osm_tag': 'fitness_centre'}, {'osm_key': 'leisure', 'osm_tag': 'fitness_station'}, {'osm_key': 'leisure', 'osm_tag': 'sports_centre'}, {'osm_key': 'leisure', 'osm_tag': 'swimming_pool'}]\n  services:\n    [{'osm_key': 'amenity', 'osm_tag': 'fire_station'}, {'osm_key': 'amenity', 'osm_tag': 'police'}, {'osm_key': 'amenity', 'osm_tag': 'post_office'}, {'osm_key': 'post_office', 'osm_tag': 'post_partner'}, {'osm_key': 'amenity', 'osm_tag': 'post_box'}, {'osm_key': 'amenity', 'osm_tag': 'townhall'}, {'osm_key': 'amenity', 'osm_tag': 'toilets'}]\n  healthcare:\n    [{'osm_key': 'amenity', 'osm_tag': 'clinic'}, {'osm_key': 'amenity', 'osm_tag': 'dentist'}, {'osm_key': 'amenity', 'osm_tag': 'doctors'}, {'osm_key': 'amenity', 'osm_tag': 'hospital'}, {'osm_key': 'amenity', 'osm_tag': 'pharmacy'}, {'osm_key': 'amenity', 'osm_tag': 'veterinary'}]\n  financial:\n    [{'osm_key': 'amenity', 'osm_tag': 'atm'}, {'osm_key': 'amenity', 'osm_tag': 'bank'}, {'osm_key': 'amenity', 'osm_tag': 'payment_terminal'}, {'osm_key': 'amenity', 'osm_tag': 'payment_centre'}]\n\n=====================================================================\n",
+          "mimetype": "text/plain"
+        }
+      ]
     },
     {
       "id": "lEQa",
@@ -72,7 +79,7 @@
     },
     {
       "id": "PKri",
-      "code_hash": "b50f3d316b5c7a608c4e018e81ffccf3",
+      "code_hash": "36d785dca9cb2d5b02d4afe1fdc5a3e4",
       "outputs": [
         {
           "type": "data",
@@ -124,7 +131,7 @@
     },
     {
       "id": "RGSE",
-      "code_hash": "d4c3a8969290218909cdb6c54d530095",
+      "code_hash": "ae29b5c9fea5b202a608ae3acd4ae1d1",
       "outputs": [
         {
           "type": "data",
@@ -207,11 +214,18 @@
         {
           "type": "data",
           "data": {
-            "text/html": "<marimo-ui-element object-id='ZHCJ-0' random-id='9623c47b-6423-62d3-1bb2-d18daa6ad67a'><marimo-table data-initial-value='[]' data-label='null' data-data='&quot;[{&#92;&quot;place&#92;&quot;:&#92;&quot;Copenhagen Municipality, Denmark&#92;&quot;,&#92;&quot;city_dir&#92;&quot;:&#92;&quot;cache/copenhagen_municipality_denmark&#92;&quot;,&#92;&quot;exact_boundary_path&#92;&quot;:&#92;&quot;cache/copenhagen_municipality_denmark/municipality_boundary.geojson&#92;&quot;,&#92;&quot;clip_boundary_path&#92;&quot;:&#92;&quot;cache/copenhagen_municipality_denmark/municipality_clip_boundary_2000m.geojson&#92;&quot;,&#92;&quot;source_id&#92;&quot;:&#92;&quot;denmark&#92;&quot;,&#92;&quot;source_name&#92;&quot;:&#92;&quot;Denmark&#92;&quot;,&#92;&quot;source_url&#92;&quot;:&#92;&quot;https://download.geofabrik.de/europe/denmark-latest.osm.pbf&#92;&quot;,&#92;&quot;covers_full_city&#92;&quot;:true,&#92;&quot;area&#92;&quot;:14.593129135920002,&#92;&quot;city_pbf_path&#92;&quot;:&#92;&quot;cache/copenhagen_municipality_denmark/copenhagen_municipality_denmark_buffer_2000m.osm.pbf&#92;&quot;,&#92;&quot;city_pbf_exists&#92;&quot;:false},{&#92;&quot;place&#92;&quot;:&#92;&quot;Polla, Salerno, Campania, Italy&#92;&quot;,&#92;&quot;city_dir&#92;&quot;:&#92;&quot;cache/polla_salerno_campania_italy&#92;&quot;,&#92;&quot;exact_boundary_path&#92;&quot;:&#92;&quot;cache/polla_salerno_campania_italy/municipality_boundary.geojson&#92;&quot;,&#92;&quot;clip_boundary_path&#92;&quot;:&#92;&quot;cache/polla_salerno_campania_italy/municipality_clip_boundary_2000m.geojson&#92;&quot;,&#92;&quot;source_id&#92;&quot;:&#92;&quot;sud&#92;&quot;,&#92;&quot;source_name&#92;&quot;:&#92;&quot;Sud&#92;&quot;,&#92;&quot;source_url&#92;&quot;:&#92;&quot;https://download.geofabrik.de/europe/italy/sud-latest.osm.pbf&#92;&quot;,&#92;&quot;covers_full_city&#92;&quot;:true,&#92;&quot;area&#92;&quot;:15.711787404850003,&#92;&quot;city_pbf_path&#92;&quot;:&#92;&quot;cache/polla_salerno_campania_italy/polla_salerno_campania_italy_buffer_2000m.osm.pbf&#92;&quot;,&#92;&quot;city_pbf_exists&#92;&quot;:false}]&quot;' data-total-rows='2' data-total-columns='11' data-max-columns='50' data-banner-text='&quot;&quot;' data-pagination='false' data-page-size='10' data-field-types='[[&quot;place&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;city_dir&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;exact_boundary_path&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;clip_boundary_path&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;source_id&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;source_name&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;source_url&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;covers_full_city&quot;,[&quot;boolean&quot;,&quot;bool&quot;]],[&quot;area&quot;,[&quot;number&quot;,&quot;float64&quot;]],[&quot;city_pbf_path&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;city_pbf_exists&quot;,[&quot;boolean&quot;,&quot;bool&quot;]]]' data-show-filters='true' data-show-download='true' data-show-search='true' data-show-column-summaries='false' data-show-data-types='true' data-show-page-size-selector='false' data-show-column-explorer='true' data-show-chart-builder='true' data-row-headers='[]' data-hidden-columns='[]' data-has-stable-row-id='false' data-lazy='false' data-preload='false'></marimo-table></marimo-ui-element>"
+            "text/html": "<marimo-ui-element object-id='ZHCJ-0' random-id='52b54f03-1568-9fe5-549e-9c0cfffe863e'><marimo-table data-initial-value='[]' data-label='null' data-data='&quot;[{&#92;&quot;place&#92;&quot;:&#92;&quot;Copenhagen Municipality, Denmark&#92;&quot;,&#92;&quot;city_dir&#92;&quot;:&#92;&quot;cache/copenhagen_municipality_denmark&#92;&quot;,&#92;&quot;exact_boundary_path&#92;&quot;:&#92;&quot;cache/copenhagen_municipality_denmark/municipality_boundary.geojson&#92;&quot;,&#92;&quot;clip_boundary_path&#92;&quot;:&#92;&quot;cache/copenhagen_municipality_denmark/municipality_clip_boundary_2000m.geojson&#92;&quot;,&#92;&quot;source_id&#92;&quot;:&#92;&quot;denmark&#92;&quot;,&#92;&quot;source_name&#92;&quot;:&#92;&quot;Denmark&#92;&quot;,&#92;&quot;source_url&#92;&quot;:&#92;&quot;https://download.geofabrik.de/europe/denmark-latest.osm.pbf&#92;&quot;,&#92;&quot;covers_full_city&#92;&quot;:true,&#92;&quot;area&#92;&quot;:14.593129135920002,&#92;&quot;city_pbf_path&#92;&quot;:&#92;&quot;cache/copenhagen_municipality_denmark/copenhagen_municipality_denmark_buffer_2000m.osm.pbf&#92;&quot;,&#92;&quot;city_pbf_exists&#92;&quot;:true},{&#92;&quot;place&#92;&quot;:&#92;&quot;Polla, Salerno, Campania, Italy&#92;&quot;,&#92;&quot;city_dir&#92;&quot;:&#92;&quot;cache/polla_salerno_campania_italy&#92;&quot;,&#92;&quot;exact_boundary_path&#92;&quot;:&#92;&quot;cache/polla_salerno_campania_italy/municipality_boundary.geojson&#92;&quot;,&#92;&quot;clip_boundary_path&#92;&quot;:&#92;&quot;cache/polla_salerno_campania_italy/municipality_clip_boundary_2000m.geojson&#92;&quot;,&#92;&quot;source_id&#92;&quot;:&#92;&quot;sud&#92;&quot;,&#92;&quot;source_name&#92;&quot;:&#92;&quot;Sud&#92;&quot;,&#92;&quot;source_url&#92;&quot;:&#92;&quot;https://download.geofabrik.de/europe/italy/sud-latest.osm.pbf&#92;&quot;,&#92;&quot;covers_full_city&#92;&quot;:true,&#92;&quot;area&#92;&quot;:15.711787404850003,&#92;&quot;city_pbf_path&#92;&quot;:&#92;&quot;cache/polla_salerno_campania_italy/polla_salerno_campania_italy_buffer_2000m.osm.pbf&#92;&quot;,&#92;&quot;city_pbf_exists&#92;&quot;:true}]&quot;' data-total-rows='2' data-total-columns='11' data-max-columns='50' data-banner-text='&quot;&quot;' data-pagination='false' data-page-size='10' data-field-types='[[&quot;place&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;city_dir&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;exact_boundary_path&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;clip_boundary_path&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;source_id&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;source_name&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;source_url&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;covers_full_city&quot;,[&quot;boolean&quot;,&quot;bool&quot;]],[&quot;area&quot;,[&quot;number&quot;,&quot;float64&quot;]],[&quot;city_pbf_path&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;city_pbf_exists&quot;,[&quot;boolean&quot;,&quot;bool&quot;]]]' data-show-filters='true' data-show-download='true' data-show-search='true' data-show-column-summaries='false' data-show-data-types='true' data-show-page-size-selector='false' data-show-column-explorer='true' data-show-chart-builder='true' data-row-headers='[]' data-hidden-columns='[]' data-has-stable-row-id='false' data-lazy='false' data-preload='false'></marimo-table></marimo-ui-element>"
           }
         }
       ],
-      "console": []
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "Using cached Geofabrik index.\n",
+          "mimetype": "text/plain"
+        }
+      ]
     },
     {
       "id": "ROlb",
@@ -228,49 +242,7 @@
         {
           "type": "stream",
           "name": "stdout",
-          "text": "Clipping Copenhagen Municipality, Denmark\nClipping Polla, Salerno, Campania, Italy\nBuilding graph and POIs: Copenhagen Municipality, Denmark\nBuilding graph for Copenhagen Municipality, Denmark\n",
-          "mimetype": "text/plain"
-        },
-        {
-          "type": "stream",
-          "name": "stderr",
-          "text": "/tmp/marimo_138411/__marimo__cell_Hstk_.py:19: UserWarning: The out-of-core engine is reading on a single core. This machine has 12 CPU cores available; pass workers='auto' to OSM(..., engine='out_of_core') to let pyrosm choose automatically whether the file benefits from multiple cores or a single one, or set workers=N for an explicit count. Parallel reads spawn worker processes on macOS/Windows, so run them under an `if __name__ == \"__main__\":` guard. Pass workers=1 to silence this message.\n  network_nodes, network_edges = osm.get_network(\n",
-          "mimetype": "text/plain"
-        },
-        {
-          "type": "stream",
-          "name": "stdout",
-          "text": "Extracting POIs for Copenhagen Municipality, Denmark\n",
-          "mimetype": "text/plain"
-        },
-        {
-          "type": "stream",
-          "name": "stderr",
-          "text": "/tmp/marimo_138411/__marimo__cell_nWHF_.py:23: UserWarning: The out-of-core engine is reading on a single core. This machine has 12 CPU cores available; pass workers='auto' to OSM(..., engine='out_of_core') to let pyrosm choose automatically whether the file benefits from multiple cores or a single one, or set workers=N for an explicit count. Parallel reads spawn worker processes on macOS/Windows, so run them under an `if __name__ == \"__main__\":` guard. Pass workers=1 to silence this message.\n  raw = osm.get_data_by_custom_criteria(\n",
-          "mimetype": "text/plain"
-        },
-        {
-          "type": "stream",
-          "name": "stdout",
-          "text": "Building graph and POIs: Polla, Salerno, Campania, Italy\nBuilding graph for Polla, Salerno, Campania, Italy\n",
-          "mimetype": "text/plain"
-        },
-        {
-          "type": "stream",
-          "name": "stderr",
-          "text": "/tmp/marimo_138411/__marimo__cell_Hstk_.py:19: UserWarning: The out-of-core engine is reading on a single core. This machine has 12 CPU cores available; pass workers='auto' to OSM(..., engine='out_of_core') to let pyrosm choose automatically whether the file benefits from multiple cores or a single one, or set workers=N for an explicit count. Parallel reads spawn worker processes on macOS/Windows, so run them under an `if __name__ == \"__main__\":` guard. Pass workers=1 to silence this message.\n  network_nodes, network_edges = osm.get_network(\n",
-          "mimetype": "text/plain"
-        },
-        {
-          "type": "stream",
-          "name": "stdout",
-          "text": "Extracting POIs for Polla, Salerno, Campania, Italy\n",
-          "mimetype": "text/plain"
-        },
-        {
-          "type": "stream",
-          "name": "stderr",
-          "text": "/tmp/marimo_138411/__marimo__cell_nWHF_.py:23: UserWarning: The out-of-core engine is reading on a single core. This machine has 12 CPU cores available; pass workers='auto' to OSM(..., engine='out_of_core') to let pyrosm choose automatically whether the file benefits from multiple cores or a single one, or set workers=N for an explicit count. Parallel reads spawn worker processes on macOS/Windows, so run them under an `if __name__ == \"__main__\":` guard. Pass workers=1 to silence this message.\n  raw = osm.get_data_by_custom_criteria(\n",
+          "text": "Building graph and POIs: Copenhagen Municipality, Denmark\nLoading cached graph for Copenhagen Municipality, Denmark\nLoading cached POIs for Copenhagen Municipality, Denmark\nBuilding graph and POIs: Polla, Salerno, Campania, Italy\nLoading cached graph for Polla, Salerno, Campania, Italy\nLoading cached POIs for Polla, Salerno, Campania, Italy\n",
           "mimetype": "text/plain"
         }
       ]
@@ -367,7 +339,7 @@
         {
           "type": "data",
           "data": {
-            "text/html": "<marimo-ui-element object-id='Pvdt-0' random-id='12acdfbc-0b72-a298-bf64-b33aedc65739'><marimo-table data-initial-value='[]' data-label='null' data-data='&quot;[{&#92;&quot;place&#92;&quot;:&#92;&quot;Copenhagen Municipality, Denmark&#92;&quot;,&#92;&quot;nodes&#92;&quot;:40959,&#92;&quot;categories&#92;&quot;:10,&#92;&quot;feature_unit&#92;&quot;:&#92;&quot;kilometres&#92;&quot;},{&#92;&quot;place&#92;&quot;:&#92;&quot;Polla, Salerno, Campania, Italy&#92;&quot;,&#92;&quot;nodes&#92;&quot;:843,&#92;&quot;categories&#92;&quot;:10,&#92;&quot;feature_unit&#92;&quot;:&#92;&quot;kilometres&#92;&quot;}]&quot;' data-total-rows='2' data-total-columns='4' data-max-columns='50' data-banner-text='&quot;&quot;' data-pagination='false' data-page-size='10' data-field-types='[[&quot;place&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;nodes&quot;,[&quot;integer&quot;,&quot;int64&quot;]],[&quot;categories&quot;,[&quot;integer&quot;,&quot;int64&quot;]],[&quot;feature_unit&quot;,[&quot;string&quot;,&quot;object&quot;]]]' data-show-filters='true' data-show-download='true' data-show-search='true' data-show-column-summaries='false' data-show-data-types='true' data-show-page-size-selector='false' data-show-column-explorer='true' data-show-chart-builder='true' data-row-headers='[]' data-hidden-columns='[]' data-has-stable-row-id='false' data-lazy='false' data-preload='false'></marimo-table></marimo-ui-element>"
+            "text/html": "<marimo-ui-element object-id='Pvdt-0' random-id='d918cf2a-dc28-fb6a-775b-3e35b9d08f85'><marimo-table data-initial-value='[]' data-label='null' data-data='&quot;[{&#92;&quot;place&#92;&quot;:&#92;&quot;Copenhagen Municipality, Denmark&#92;&quot;,&#92;&quot;nodes&#92;&quot;:40959,&#92;&quot;categories&#92;&quot;:10,&#92;&quot;feature_unit&#92;&quot;:&#92;&quot;kilometres&#92;&quot;},{&#92;&quot;place&#92;&quot;:&#92;&quot;Polla, Salerno, Campania, Italy&#92;&quot;,&#92;&quot;nodes&#92;&quot;:843,&#92;&quot;categories&#92;&quot;:10,&#92;&quot;feature_unit&#92;&quot;:&#92;&quot;kilometres&#92;&quot;}]&quot;' data-total-rows='2' data-total-columns='4' data-max-columns='50' data-banner-text='&quot;&quot;' data-pagination='false' data-page-size='10' data-field-types='[[&quot;place&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;nodes&quot;,[&quot;integer&quot;,&quot;int64&quot;]],[&quot;categories&quot;,[&quot;integer&quot;,&quot;int64&quot;]],[&quot;feature_unit&quot;,[&quot;string&quot;,&quot;object&quot;]]]' data-show-filters='true' data-show-download='true' data-show-search='true' data-show-column-summaries='false' data-show-data-types='true' data-show-page-size-selector='false' data-show-column-explorer='true' data-show-chart-builder='true' data-row-headers='[]' data-hidden-columns='[]' data-has-stable-row-id='false' data-lazy='false' data-preload='false'></marimo-table></marimo-ui-element>"
           }
         }
       ],
@@ -380,7 +352,7 @@
         {
           "type": "data",
           "data": {
-            "text/html": "<marimo-ui-element object-id='ZBYS-0' random-id='36e3c837-84f2-53fa-1a9d-8d2f5054965e'><marimo-table data-initial-value='[]' data-label='null' data-data='&quot;[{&#92;&quot;place&#92;&quot;:&#92;&quot;Copenhagen Municipality, Denmark&#92;&quot;,&#92;&quot;nodes&#92;&quot;:40959,&#92;&quot;embedding_columns&#92;&quot;:1500},{&#92;&quot;place&#92;&quot;:&#92;&quot;Polla, Salerno, Campania, Italy&#92;&quot;,&#92;&quot;nodes&#92;&quot;:843,&#92;&quot;embedding_columns&#92;&quot;:1500}]&quot;' data-total-rows='2' data-total-columns='3' data-max-columns='50' data-banner-text='&quot;&quot;' data-pagination='false' data-page-size='10' data-field-types='[[&quot;place&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;nodes&quot;,[&quot;integer&quot;,&quot;int64&quot;]],[&quot;embedding_columns&quot;,[&quot;integer&quot;,&quot;int64&quot;]]]' data-show-filters='true' data-show-download='true' data-show-search='true' data-show-column-summaries='false' data-show-data-types='true' data-show-page-size-selector='false' data-show-column-explorer='true' data-show-chart-builder='true' data-row-headers='[]' data-hidden-columns='[]' data-has-stable-row-id='false' data-lazy='false' data-preload='false'></marimo-table></marimo-ui-element>"
+            "text/html": "<marimo-ui-element object-id='ZBYS-0' random-id='1484c41c-2267-efa0-3b41-9f1745bd0834'><marimo-table data-initial-value='[]' data-label='null' data-data='&quot;[{&#92;&quot;place&#92;&quot;:&#92;&quot;Copenhagen Municipality, Denmark&#92;&quot;,&#92;&quot;nodes&#92;&quot;:40959,&#92;&quot;embedding_columns&#92;&quot;:1500},{&#92;&quot;place&#92;&quot;:&#92;&quot;Polla, Salerno, Campania, Italy&#92;&quot;,&#92;&quot;nodes&#92;&quot;:843,&#92;&quot;embedding_columns&#92;&quot;:1500}]&quot;' data-total-rows='2' data-total-columns='3' data-max-columns='50' data-banner-text='&quot;&quot;' data-pagination='false' data-page-size='10' data-field-types='[[&quot;place&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;nodes&quot;,[&quot;integer&quot;,&quot;int64&quot;]],[&quot;embedding_columns&quot;,[&quot;integer&quot;,&quot;int64&quot;]]]' data-show-filters='true' data-show-download='true' data-show-search='true' data-show-column-summaries='false' data-show-data-types='true' data-show-page-size-selector='false' data-show-column-explorer='true' data-show-chart-builder='true' data-row-headers='[]' data-hidden-columns='[]' data-has-stable-row-id='false' data-lazy='false' data-preload='false'></marimo-table></marimo-ui-element>"
           }
         }
       ],
@@ -435,6 +407,52 @@
           "type": "stream",
           "name": "stdout",
           "text": "Saved: /home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/output/FEATHER_curves/copenhagen_municipality_denmark/feather_all_orders.png\nSaved: /home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/output/FEATHER_curves/polla_salerno_campania_italy/feather_all_orders.png\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "AjVT",
+      "code_hash": "4977a8c3b6e5462df122f9ff2c694754",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/html": "<div style='display: flex;flex: 1;flex-direction: row;justify-content: space-between;align-items: normal;flex-wrap: nowrap;gap: 0.5rem'><marimo-ui-element object-id='AjVT-0' random-id='f54d3ff1-dbc6-e3f3-ccd1-87dfafaa40f2'><marimo-dropdown data-initial-value='[&quot;Copenhagen Municipality, Denmark&quot;]' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eCity&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-options='[&quot;Copenhagen Municipality, Denmark&quot;,&quot;Polla, Salerno, Campania, Italy&quot;]' data-allow-select-none='false' data-searchable='false' data-full-width='false' data-disabled='false'></marimo-dropdown></marimo-ui-element><marimo-ui-element object-id='AjVT-1' random-id='f668b739-cc03-bf63-0400-44c0c5ff77dd'><marimo-dropdown data-initial-value='[&quot;outdoor_activities&quot;]' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003ePOI category&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-options='[&quot;outdoor_activities&quot;,&quot;learning&quot;,&quot;supplies&quot;,&quot;eating&quot;,&quot;moving&quot;,&quot;cultural_activities&quot;,&quot;physical_exercise&quot;,&quot;services&quot;,&quot;healthcare&quot;,&quot;financial&quot;]' data-allow-select-none='false' data-searchable='false' data-full-width='false' data-disabled='false'></marimo-dropdown></marimo-ui-element></div>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "pHFh",
+      "code_hash": "0c1ab4dc19778c8af73dd2b602f3c95d",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/html": "<marimo-callout-output data-html='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;text-error&#92;&quot;&#92;u003e&#92;u003cstrong&#92;u003eYour output is too large&#92;u003c/strong&#92;u003e&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&#92;n&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eYour output is too large for marimo to show. It has a size&#92;nof 8793704 bytes. Did you output this object by accident?&#92;u003c/span&#92;u003e&#92;n&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eIf this limitation is a problem for you, you can configure&#92;nthe max output size by adding (eg)&#92;u003c/span&#92;u003e&#92;n&#92;u003cdiv class=&#92;&quot;language-ini codehilite&#92;&quot;&#92;u003e&#92;u003cpre&#92;u003e&#92;u003cspan&#92;u003e&#92;u003c/span&#92;u003e&#92;u003ccode&#92;u003e&#92;u003cspan class=&#92;&quot;k&#92;&quot;&#92;u003e[tool.marimo.runtime]&#92;u003c/span&#92;u003e&#92;n&#92;u003cspan class=&#92;&quot;na&#92;&quot;&#92;u003eoutput_max_bytes&#92;u003c/span&#92;u003e&#92;u003cspan class=&#92;&quot;w&#92;&quot;&#92;u003e &#92;u003c/span&#92;u003e&#92;u003cspan class=&#92;&quot;o&#92;&quot;&#92;u003e=&#92;u003c/span&#92;u003e&#92;u003cspan class=&#92;&quot;w&#92;&quot;&#92;u003e &#92;u003c/span&#92;u003e&#92;u003cspan class=&#92;&quot;s&#92;&quot;&#92;u003e10_000_000&#92;u003c/span&#92;u003e&#92;n&#92;u003c/code&#92;u003e&#92;u003c/pre&#92;u003e&#92;u003c/div&#92;u003e&#92;n&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eto your pyproject.toml, or with the environment variable&#92;n&#92;u003ccode&#92;u003eMARIMO_OUTPUT_MAX_BYTES&#92;u003c/code&#92;u003e:&#92;u003c/span&#92;u003e&#92;n&#92;u003cdiv class=&#92;&quot;language-gdscript codehilite&#92;&quot;&#92;u003e&#92;u003cpre&#92;u003e&#92;u003cspan&#92;u003e&#92;u003c/span&#92;u003e&#92;u003ccode&#92;u003e&#92;u003cspan class=&#92;&quot;k&#92;&quot;&#92;u003eexport&#92;u003c/span&#92;u003e&#92;u003cspan class=&#92;&quot;w&#92;&quot;&#92;u003e &#92;u003c/span&#92;u003e&#92;u003cspan class=&#92;&quot;n&#92;&quot;&#92;u003eMARIMO_OUTPUT_MAX_BYTES&#92;u003c/span&#92;u003e&#92;u003cspan class=&#92;&quot;o&#92;&quot;&#92;u003e=&#92;u003c/span&#92;u003e&#92;u003cspan class=&#92;&quot;mi&#92;&quot;&#92;u003e10&#92;u003c/span&#92;u003e&#92;u003cspan class=&#92;&quot;n&#92;&quot;&#92;u003e_000_000&#92;u003c/span&#92;u003e&#92;n&#92;u003c/code&#92;u003e&#92;u003c/pre&#92;u003e&#92;u003c/div&#92;u003e&#92;n&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eIncreasing the max output size may cause performance issues.&#92;nIf you run into problems, please reach out&#92;nto us on &#92;u003ca href=&#92;&quot;https://marimo.io/discord?ref=app&#92;&quot; rel=&#92;&quot;noopener noreferrer&#92;&quot; target=&#92;&quot;_blank&#92;&quot;&#92;u003eDiscord&#92;u003c/a&#92;u003e or&#92;n&#92;u003ca href=&#92;&quot;https://github.com/marimo-team/marimo/issues&#92;&quot; rel=&#92;&quot;noopener noreferrer&#92;&quot; target=&#92;&quot;_blank&#92;&quot;&#92;u003eGitHub&#92;u003c/a&#92;u003e.&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-kind='&quot;warn&quot;'></marimo-callout-output>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "kDTO",
+      "code_hash": "73449c79e31bcfc91fc189376e76d83a",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "Saved interactive map data: /home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/output/interactive_map_data/copenhagen_municipality_denmark.pkl\nSaved interactive map data: /home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/output/interactive_map_data/polla_salerno_campania_italy.pkl\n",
           "mimetype": "text/plain"
         }
       ]
