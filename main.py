@@ -1,9 +1,8 @@
-#read config file from input
 
-#download and use graph via pipeline
+from pipeline.geofabrik_final import run_pipeline
 
-#Run FEATHER_new based on config
 
-#output embeddings in output
+if __name__ == "__main__":
+    run_pipeline()
 
 #Do classification

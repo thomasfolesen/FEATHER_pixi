@@ -16,7 +16,7 @@ def _():
 @app.cell
 def _(Path):
     PROJECT_ROOT = Path(__file__).resolve().parent.parent
-    MAP_DATA_DIR = PROJECT_ROOT / "output" / "interactive_map_data"
+    MAP_DATA_DIR = PROJECT_ROOT / "cache" / "interactive_map_data"
 
     map_files = {
         path.stem: path
