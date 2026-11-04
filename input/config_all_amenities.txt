@@ -1,4 +1,4 @@
-place = [[Copenhagen Municipality, Denmark], [Polla, Salerno, Campania, Italy]]
+place = [[Copenhagen Municipality, Denmark], [Polla, Salerno, Campania, Italy], [Bremen, Germany], [Asti, Piedmont, Italy], [Mysłowice, Silesian Voivodeship, Poland], [Boulogne-Billancourt, Hauts-de-Seine, France], [Freiburg im Breisgau, Baden-Württemberg, Germany], [Calw, Baden-Württemberg, Germany], [Belgrade, Serbia], [Nové Bránice, Czech Republic], [Thomasberg, Austria], [Nevers, France], [Lillehammer, Norway], [Joensuu, Finland], [Lübeck, Germany], [Almere, Netherlands], [Zoetermeer, Netherlands], [Reims, France], [Pamplona, Navarre, Spain], [Sigüés, Zaragoza, Spain], [Yeste, Albacete, Spain], [Sezures, Portugal], [Prova, Portugal]]
 theta_max = 2.5
 eval_points = 25
 order = 5

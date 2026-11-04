@@ -1,10 +1,18 @@
+# list of places to download from Geofabrik
 place = [[Lübeck, Germany], [Almere, Netherlands], [Zoetermeer, Netherlands], [Reims, France], [Pamplona, Navarre, Spain], [Sigüés, Zaragoza, Spain], [Yeste, Albacete, Spain], [Sezures, Portugal], [Prova, Portugal]]
+#float on the x-asis what should the max value be?
 theta_max = 15
+#int how many points to look at
 eval_points = 20
+#int. known as r from article
 order = 7
+#int sets max distance to amenity and also geo downloaded and used around graph for place
 CLIP_BUFFER_M = 2000
+#int how many POI's and their mean shall be used for the feature value of the vertice
 NEAREST_POIS = 15
+#float. for the sin + cos curves looking at top and bot nodes what is the cutoff for these?
 high_low_percent = 1
+#list of places based on OSM taxonomy
 outdoor_activities = [[leisure=park], [leisure=playground], [leisure=bathing_place], [leisure=garden], [leisure=pitch], [leisure=stadium], [leisure=swimming_area], [leisure=track], [tourism=picnic_site]]
 learning = [[amenity=college], [amenity=school], [amenity=library], [amenity=kindergarten], [amenity=university], [amenity=training]]
 supplies = [[shop=department_store], [shop=general], [shop=mall], [shop=supermarket], [shop=convenience], [shop=bakery], [shop=butcher], [shop=greengrocer], [shop=books], [shop=stationery], [shop=clothes], [shop=shoes], [shop=appliance], [shop=doityourself], [shop=furniture], [shop=electronics], [shop=houseware]]
