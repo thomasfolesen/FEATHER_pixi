@@ -5,7 +5,6 @@ import pickle
 import re
 import subprocess
 import time
-from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -22,7 +21,7 @@ import sys
 from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
-from feather import FEATHER_new
+from FEATHER.feather import FEATHER_new
 
 CONFIG_PATH = PROJECT_ROOT / "input" / "config.txt"
 CACHE_ROOT = PROJECT_ROOT / "cache"
@@ -46,7 +45,12 @@ def load_config(path):
     """
     Load parameters from config file
     """
-    config = {"resolved_categories": {}}
+    config = {
+        "resolved_categories": {},
+        # Percentages: 0.125 means 0.125%, not 12.5%.
+        "outlier_bottom_percent": 0.125,
+        "outlier_top_percent": 0.125,
+    }
     for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line or line.startswith("#"): #if empty line or a comment do nothing
@@ -56,7 +60,10 @@ def load_config(path):
         value = value.strip()
         if key == "place":
             config["places"] = parse_config_list(value)
-        elif key in ("theta_max", "high_low_percent"):
+        elif key in (
+            "theta_max", "high_low_percent",
+            "outlier_bottom_percent", "outlier_top_percent",
+        ):
             config[key] = float(value)
         elif key in ("eval_points", "order", "CLIP_BUFFER_M", "NEAREST_POIS"):
             config[key] = int(value)
@@ -338,7 +345,7 @@ def build_graph_from_pbf(place, city_pbf_path, city_dir):
 
         status = "built"
 
-    # Convert longitude and latitude to projection measured in metres.
+    # Convert longitude and latitude to projection in metres.
     projected_graph = ox.project_graph(graph)
 
     # Create spatial tables of nodes and edges
@@ -542,12 +549,23 @@ def calculate_poi_distances(graph_data, pois, categories):
         poi_counts[category] = nearest.notna().sum(axis=1)
     return distances, poi_counts
 
-def save_distance_map(place, category, graph_data, distances, folder):
+def save_distance_map(place, category, graph_data, distances, folder, combined=False):
     nodes = graph_data["nodes"].copy()
     nodes["distance"] = distances.reindex(nodes.index)
     category_name = category.replace("_", " ")
     folder.mkdir(parents=True, exist_ok=True)
     image_path = folder / f"distance_to_{category}.png"
+    title = f"Mean distance to up to {NEAREST_POIS} nearest {category_name} POIs"
+    note = (
+        f"Mean over up to {NEAREST_POIS} POIs reachable within "
+        f"{CLIP_BUFFER_M:,} m; unavailable neighbours are excluded.\n"
+    )
+    if combined:
+        title = "Average walking distance across all amenity categories"
+        note = (
+            "Each category has equal weight; missing category distances "
+            f"are set to {CLIP_BUFFER_M:,} m.\n"
+        )
     with plt.style.context("default"):
         fig, ax = plt.subplots(figsize=(14, 11))
         boundary = (
@@ -595,9 +613,7 @@ def save_distance_map(place, category, graph_data, distances, folder):
                 },
             )
         ax.set_title(
-            f"{place}\n"
-            f"Mean distance to up to {NEAREST_POIS} nearest "
-            f"{category_name} POIs",
+            f"{place}\n{title}",
             fontsize=15,
         )
         ax.set_axis_off()
@@ -605,9 +621,7 @@ def save_distance_map(place, category, graph_data, distances, folder):
             0.5,
             0.02,
             (
-                f"Mean over up to {NEAREST_POIS} POIs reachable within "
-                f"{CLIP_BUFFER_M:,} m; unavailable neighbours are excluded.\n"
-                "Routes and POIs may extend outside the municipality. "
+                note + "Routes and POIs may extend outside the municipality. "
                 "POI-to-network snapping distance is excluded."
             ),
             ha="center",
@@ -619,258 +633,60 @@ def save_distance_map(place, category, graph_data, distances, folder):
         plt.close(fig)
     return image_path
 
-def prepare_feather_inputs(graph, distances, categories):
-    node_ids = list(graph.nodes)
-    categories = list(categories)
-    features = distances.reindex(
-        index=node_ids,
-        columns=list(categories),
-    )
+def fill_distances(distances):
+    """Use the same missing-distance replacement for totals and FEATHER."""
+    features = distances.copy()
     if np.isinf(features.to_numpy()).any():
         raise ValueError("Distances contain infinite values.")
     if (features < 0).any().any():
         raise ValueError("Distances cannot be negative.")
     # Treat missing amenities and distances beyond the search limit equally.
-    features = features.clip(
+    return features.clip(
         upper=CLIP_BUFFER_M
     ).fillna(CLIP_BUFFER_M)
-    node_numbers = {
-        node_id: position
-        for position, node_id in enumerate(node_ids)
-    }
-    numbered_graph = nx.relabel_nodes(graph, node_numbers, copy=True)
-    return {
-        "graph": numbered_graph,
-        "features": features.to_numpy(dtype=float) / CLIP_BUFFER_M,
-        "node_ids": node_ids,
-        "categories": list(categories),
-    }
-
-def municipality_data(graph_data, boundary_path):
-    boundary = (
-        gpd.read_file(boundary_path)
-        .to_crs(graph_data["nodes"].crs)
-        .geometry.union_all()
-    )
-    nodes = graph_data["nodes"]
-    node_ids = nodes.index[nodes.geometry.apply(boundary.covers)]
-    edges = graph_data["edges"]
-    keep = (
-        edges.index.get_level_values("u").isin(node_ids)
-        & edges.index.get_level_values("v").isin(node_ids)
-    )
-    return {
-        "graph": graph_data["graph"].subgraph(node_ids).copy(),
-        "nodes": nodes.loc[node_ids].copy(),
-        "edges": edges.loc[keep].copy(),
-    }
-
-def embedding_columns(categories, order, eval_points):
-    # Same order as FEATHER: r, component, category, evaluation point.
-    return [
-        f"r{r}_{category}_eval{point}_{component}"
-        for r in range(1, order + 1)
-        for component in ("real", "imaginary")
-        for category in categories
-        for point in range(1, eval_points + 1)
-    ]
-
-def format_curve_axis(ax, title, ylabel):
-    """Apply labels and a zero reference line to a characteristic-function panel."""
-    ax.set_title(title)
-    ax.set_xlabel("Evaluation point θ")
-    ax.set_ylabel(ylabel)
-    ax.axhline(0, color="grey", linewidth=0.6)
-    ax.grid(alpha=0.2)
 
 
-def save_figure(fig, destination, dpi=300):
-    """Create the output folder, save the figure, and release it."""
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(destination, dpi=dpi, bbox_inches="tight", facecolor="white")
-    plt.close(fig)
-
-
-def save_curves(series, theta, title, destination):
-    # Each entry contains a label and its cosine/sine curves.
-    fig, axes = plt.subplots(1, 2, figsize=(12, 4), sharey=True)
-    for index, (label, values) in enumerate(series.items()):
-        for component, ax in enumerate(axes):
-            ax.plot(
-                theta, values[component],
-                color=plt.get_cmap("tab10")(index % 10),
-                linestyle=["-", "--", "-.", ":"][(index // 10) % 4],
-                marker="o", markersize=3, label=label,
-            )
-    for ax, label in zip(axes, ["Real (cosine)", "Imaginary (sine)"]):
-        format_curve_axis(ax, label, "Mean across nodes")
-        ax.set_ylim(-1.05, 1.05)
-    axes[0].legend(fontsize=8)
-    fig.suptitle(title)
-    fig.tight_layout()
-def calculate_poi_distances(graph_data, pois, categories):
-    categories = list(categories)
-    nodes = graph_data["nodes"]
-    # Keep the shortest parallel edge for each node pair.
-    roads = (
-        graph_data["edges"]
-        .reset_index()
-        .sort_values("length")
-        .drop_duplicates(["u", "v"])
-    )
-    pois = pois.to_crs(nodes.crs)
+def remove_distance_outliers(graph, scores, bottom_percent, top_percent):
+    """Remove the configured tails, then nodes without neighbours."""
     if (
-        not np.isfinite(roads["length"]).all()
-        or (roads["length"] < 0).any()
+        not np.isfinite([bottom_percent, top_percent]).all()
+        or min(bottom_percent, top_percent) < 0
+        or bottom_percent + top_percent >= 100
     ):
-        raise ValueError(
-            "Road lengths must be finite, non-negative metres."
-        )
-    print("Preparing the buffered walking network...", flush=True)
-    network = pdna.Network(
-        node_x=nodes.geometry.x,
-        node_y=nodes.geometry.y,
-        edge_from=roads["u"],
-        edge_to=roads["v"],
-        edge_weights=roads[["length"]],
-        twoway=True,
-    )
-    distances = pd.DataFrame(
-        index=nodes.index,
-        columns=list(categories),
-        dtype=float,
-    )
-    poi_counts = pd.DataFrame(
-        0, index=nodes.index, columns=list(categories), dtype=int
-    )
-    for category in categories:
-        destinations = (
-            pois[pois["category"] == category]
-            .drop_duplicates(subset=["osm_type", "osm_id"])
-        )
-        if destinations.empty:
-            print(f"{category}: no POIs found.", flush=True)
-            continue
-        print(
-            f"{category}: finding up to {NEAREST_POIS} nearest POIs "
-            f"within {CLIP_BUFFER_M:,} metres...",
-            flush=True,
-        )
-        network.set_pois(
-            category=category,
-            maxdist=CLIP_BUFFER_M,
-            maxitems=NEAREST_POIS,
-            x_col=destinations.geometry.x,
-            y_col=destinations.geometry.y,
-        )
-        nearest = network.nearest_pois(
-            distance=CLIP_BUFFER_M,
-            category=category,
-            num_pois=NEAREST_POIS,
-            max_distance=-1,
-        )
-        # Missing neighbours are returned as -1.
-        nearest = nearest.where(
-            (nearest >= 0) & (nearest <= CLIP_BUFFER_M)
-        )
-        # Average available neighbours; no neighbours gives NaN.
-        distances[category] = nearest.mean(axis=1)
-        # Count only the reachable POIs used in the mean, up to NEAREST_POIS.
-        poi_counts[category] = nearest.notna().sum(axis=1)
-    return distances, poi_counts
+        raise ValueError("Outlier percentages must be non-negative and sum to less than 100.")
+    if scores.empty or not np.isfinite(scores.to_numpy()).all():
+        raise ValueError("Outlier scores must be non-empty and finite.")
 
-def save_distance_map(place, category, graph_data, distances, folder):
-    nodes = graph_data["nodes"].copy()
-    nodes["distance"] = distances.reindex(nodes.index)
-    category_name = category.replace("_", " ")
-    folder.mkdir(parents=True, exist_ok=True)
-    image_path = folder / f"distance_to_{category}.png"
-    with plt.style.context("default"):
-        fig, ax = plt.subplots(figsize=(14, 11))
-        boundary = (
-            gpd.read_file(
-                CACHE_ROOT
-                / safe_filename(place)
-                / "municipality_boundary.geojson"
-            )
-            .to_crs(graph_data["edges"].crs)
-            .geometry.union_all()
-        )
-        display_edges = gpd.clip(graph_data["edges"], boundary)
-        if not display_edges.empty:
-            display_edges.plot(
-                ax=ax,
-                color="#dddddd",
-                linewidth=0.4,
-                zorder=1,
-            )
-        missing = nodes[nodes["distance"].isna()]
-        available = nodes[nodes["distance"].notna()]
-        if not missing.empty:
-            missing.plot(
-                ax=ax,
-                color="#999999",
-                markersize=2,
-                label=f"No reachable POI within {CLIP_BUFFER_M:,} m",
-                zorder=2,
-            )
-            ax.legend()
-        if not available.empty:
-            available.plot(
-                ax=ax,
-                column="distance",
-                cmap="viridis",
-                vmin=0,
-                vmax=CLIP_BUFFER_M,
-                markersize=2,
-                zorder=3,
-                legend=True,
-                legend_kwds={
-                    "label": "Mean walking distance (metres)",
-                    "ticks": np.linspace(0, CLIP_BUFFER_M, 5),
-                    "shrink": 0.7,
-                },
-            )
-        ax.set_title(
-            f"{place}\n"
-            f"Mean distance to up to {NEAREST_POIS} nearest "
-            f"{category_name} POIs",
-            fontsize=15,
-        )
-        ax.set_axis_off()
-        fig.text(
-            0.5,
-            0.02,
-            (
-                f"Mean over up to {NEAREST_POIS} POIs reachable within "
-                f"{CLIP_BUFFER_M:,} m; unavailable neighbours are excluded.\n"
-                "Routes and POIs may extend outside the municipality. "
-                "POI-to-network snapping distance is excluded."
-            ),
-            ha="center",
-            fontsize=10,
-        )
-        # Explicitly keep an opaque background for the map.
-        fig.savefig(image_path, dpi=600, bbox_inches="tight",
-                    facecolor="white", transparent=False)
-        plt.close(fig)
-    return image_path
+    # Round down; break equal scores by node ID so repeated runs agree.
+    ranked = scores.sort_index().sort_values(kind="stable")
+    bottom_count = int(len(ranked) * bottom_percent / 100)
+    top_count = int(len(ranked) * top_percent / 100)
+    excluded = pd.Series("", index=scores.index, name="feather_exclusion")
+    if bottom_count:
+        excluded.loc[ranked.index[:bottom_count]] = "bottom_outlier"
+    if top_count:
+        excluded.loc[ranked.index[-top_count:]] = "top_outlier"
+
+    filtered = graph.subgraph(excluded.index[excluded == ""]).copy()
+    # A neighbour-only walk cannot start from an isolated node.
+    isolated = list(nx.isolates(filtered))
+    excluded.loc[isolated] = "no_neighbours"
+    filtered.remove_nodes_from(isolated)
+    print(
+        f"Excluded {bottom_count} bottom and {top_count} top distance outliers "
+        f"({bottom_percent:g}% and {top_percent:g}%), plus {len(isolated)} "
+        f"nodes without neighbours; {len(filtered)} nodes remain.",
+        flush=True,
+    )
+    if not filtered:
+        raise ValueError("No connected pairs of nodes remain for FEATHER.")
+    return filtered, excluded
+
 
 def prepare_feather_inputs(graph, distances, categories):
     node_ids = list(graph.nodes)
     categories = list(categories)
-    features = distances.reindex(
-        index=node_ids,
-        columns=list(categories),
-    )
-    if np.isinf(features.to_numpy()).any():
-        raise ValueError("Distances contain infinite values.")
-    if (features < 0).any().any():
-        raise ValueError("Distances cannot be negative.")
-    # Treat missing amenities and distances beyond the search limit equally.
-    features = features.clip(
-        upper=CLIP_BUFFER_M
-    ).fillna(CLIP_BUFFER_M)
+    features = fill_distances(distances.reindex(index=node_ids, columns=categories))
     node_numbers = {
         node_id: position
         for position, node_id in enumerate(node_ids)
@@ -947,303 +763,6 @@ def save_curves(series, theta, title, destination):
     fig.tight_layout()
     save_figure(fig, destination)
 
-def save_interactive_data(place, graph_data, distances, boundary_path):
-    nodes = graph_data["nodes"][["geometry"]]
-    boundary = (
-        gpd.read_file(boundary_path)
-        .to_crs(nodes.crs)
-        .geometry.union_all()
-    )
-    data = {
-        "place": place,
-        "nodes": nodes,
-        "edges": gpd.clip(graph_data["edges"][["geometry"]], boundary),
-        "distances": distances,
-        "CLIP_BUFFER_M": CLIP_BUFFER_M,
-        "NEAREST_POIS": NEAREST_POIS,
-    }
-    folder = CACHE_ROOT / "interactive_map_data"
-    folder.mkdir(parents=True, exist_ok=True)
-    path = folder / f"{safe_filename(place)}.pkl"
-    with path.open("wb") as file:
-        pickle.dump(data, file, protocol=pickle.HIGHEST_PROTOCOL)
-
-
-def high_low_summary(values, distances, node_ids, categories, percent):
-    # Choose nodes by original distances, before missing values are filled.
-    summaries = {}
-    node_index = pd.Index(node_ids)
-    for category_index, category in enumerate(categories):
-        scores = distances[category].reindex(node_ids)
-        scores = scores[np.isfinite(scores)].sort_index().sort_values(kind="stable")
-        if len(scores) < 2:
-            print(f"{category}: fewer than two reachable nodes; skipping high/low plots.", flush=True)
-            continue
-        # Round down, but keep at least one node in each group.
-        count = max(1, int(len(scores) * percent / 100))
-        groups = {"low": scores.index[:count], "high": scores.index[-count:]}
-        summaries[category] = {}
-        for group, selected in groups.items():
-            positions = node_index.get_indexer(selected)
-            # Shape: selected nodes, walk order, component, evaluation point.
-            block = values[positions, :, :, category_index, :]
-            summaries[category][group] = {
-                "mean": block.mean(axis=0),
-                "std": block.std(axis=0, ddof=0),
-                "count": count,
-                "distance_min": float(scores.loc[selected].min()),
-                "distance_max": float(scores.loc[selected].max()),
-            }
-    return summaries
-
-
-def draw_band(ax, theta, mean, std, label, color):
-    ax.plot(theta, mean, color=color, label=label, linewidth=1.5)
-    ax.fill_between(theta, mean - std, mean + std, color=color, alpha=0.18)
-
-
-def finish_band_figure(fig, axes, title, destination):
-    for r, row in enumerate(axes):
-        for component, ax in enumerate(row):
-            prefix = f"r = {r + 1} — " if len(axes) > 1 else ""
-            title_component = ["Real (cosine)", "Imaginary (sine)"][component]
-            format_curve_axis(ax, prefix + title_component, "Mean across selected nodes")
-        row[0].legend(fontsize=8)
-    # Leave the band uncut; mean ± SD may extend beyond [-1, 1].
-    fig.suptitle(title)
-    fig.text(
-        0.5, 0.01, "Shading: mean ± 1 standard deviation across selected nodes",
-        ha="center", fontsize=9,
-    )
-    fig.tight_layout(rect=(0, 0.04, 1, 0.96))
-    save_figure(fig, destination)
-
-
-def save_high_low_city(place, summaries, theta, percent, folder):
-    for category, groups in summaries.items():
-        order = groups["low"]["mean"].shape[0]
-        fig, axes = plt.subplots(
-            order, 2, figsize=(12, 3.5 * order), squeeze=False, sharex=True, sharey=True
-        )
-        for r in range(order):
-            for group, color in [("low", "tab:blue"), ("high", "tab:red")]:
-                data = groups[group]
-                for component, ax in enumerate(axes[r]):
-                    draw_band(
-                        ax, theta, data["mean"][r, component], data["std"][r, component],
-                        (
-                            f"{group.title()} distance (n={data['count']})\n"
-                            f"Mean walking distance: "
-                            f"{data['distance_min']:.1f}–{data['distance_max']:.1f} m"
-                        ), color,
-                    )
-        finish_band_figure(
-            fig, axes,
-            f"{place} — {category.replace('_', ' ')}\nLowest and highest {percent:g}% of finite distances",
-            folder / f"feather_{category}.png",
-        )
-
-
-def save_high_low_comparisons(city_groups, categories, theta, order, percent, folder):
-    # Keep each city's colour the same across all panels.
-    colors = {
-        place: plt.get_cmap("tab10")(index % 10)
-        for index, place in enumerate(city_groups)
-    }
-    folder.mkdir(parents=True, exist_ok=True)
-    for category in categories:
-        available = {
-            place: summaries[category]
-            for place, summaries in city_groups.items()
-            if category in summaries
-        }
-        if not available:
-            continue
-        fig, axes = plt.subplots(2, 2, figsize=(12, 8), sharex=True, sharey=True)
-        # High distances on top, low distances on the bottom.
-        for row, group in enumerate(("high", "low")):
-            for place, groups in available.items():
-                data = groups[group]
-                for component, ax in enumerate(axes[row]):
-                    draw_band(
-                        ax, theta, data["mean"][component], data["std"][component],
-                        (
-                            f"{place} (n={data['count']})\n"
-                            f"Mean walking distance: "
-                            f"{data['distance_min']:.1f}–{data['distance_max']:.1f} m"
-                        ),
-                        colors[place],
-                    )
-            for component, ax in enumerate(axes[row]):
-                component_name = ["Real (cosine)", "Imaginary (sine)"][component]
-                format_curve_axis(
-                    ax, f"{group.title()} distance — {component_name}",
-                    "Mean across selected nodes",
-                )
-            axes[row, 0].legend(fontsize=8)
-        fig.suptitle(
-            f"{category.replace('_', ' ')} — city comparison, r = {order}\n"
-            f"Highest and lowest {percent:g}% of finite distances"
-        )
-        fig.text(
-            0.5, 0.01, "Shading: mean ± 1 standard deviation across selected nodes",
-            ha="center", fontsize=9,
-        )
-        fig.tight_layout(rect=(0, 0.04, 1, 0.94))
-        destination = folder / f"feather_{category}_high_low.png"
-        save_figure(fig, destination)
-
-
-def process_city(city, config):
-    # Process one city at a time; retain only small summaries for comparisons.
-    place = city["place"]
-    categories = config["resolved_categories"]
-    order = config["order"]
-    eval_points = config["eval_points"]
-    theta = np.linspace(0.01, config["theta_max"], eval_points)
-    place_name = safe_filename(place)
-    curve_root = OUTPUT_ROOT / "FEATHER_curves"
-    print(f"\nProcessing {place}...", flush=True)
-    buffered = build_graph_from_pbf(
-        place, city["city_pbf_path"], city["city_dir"]
-    )
-    poi_data = extract_pois_from_city_pbf(
-        place, city["city_pbf_path"], city["city_dir"],
-        city["clip_boundary_path"], categories,
-    )
-    municipality = municipality_data(buffered, city["exact_boundary_path"])
-    print("Calculating walking distances...", flush=True)
-    distances, poi_counts = calculate_poi_distances(
-        buffered, poi_data["features"], categories
-    )
-    distances = distances.reindex(municipality["nodes"].index)
-    poi_counts = poi_counts.reindex(municipality["nodes"].index)
-
-    # Keep mean distance beside the number of POIs used.
-    distance_summary = pd.DataFrame(index=distances.index)
-    distance_summary.index.name = "node_id"
-    for category in categories:
-        distance_summary[f"{category}_mean_distance_m"] = distances[category]
-        distance_summary[f"{category}_poi_count_up_to_{NEAREST_POIS}"] = poi_counts[category]
-    summary_folder = OUTPUT_ROOT / "POI_distances" / place_name
-    summary_folder.mkdir(parents=True, exist_ok=True)
-    summary_path = summary_folder / f"{place_name}_poi_distances.csv"
-    distance_summary.to_csv(summary_path, index=True)
-    del poi_counts, distance_summary
-    del buffered, poi_data
-    gc.collect()
-    print("Saving distance maps at 600 DPI...", flush=True)
-    map_folder = OUTPUT_ROOT / "graph_POis" / place_name
-    for category in categories:
-        save_distance_map(
-            place, category, municipality, distances[category], map_folder
-        )
-    save_interactive_data(
-        place, municipality, distances, city["exact_boundary_path"]
-    )
-    print(f"Calculating FEATHER embeddings through r = {order}...", flush=True)
-    inputs = prepare_feather_inputs(municipality["graph"], distances, categories)
-    del municipality
-    model = FEATHER_new(
-        theta_max=config["theta_max"], eval_points=eval_points, order=order
-    )
-    model.fit(graph=inputs["graph"], X=inputs["features"])
-    embedding = model.get_embedding()
-    table = pd.DataFrame(
-        embedding,
-        index=pd.Index(inputs["node_ids"], name="node_id"),
-        columns=embedding_columns(categories, order, eval_points),
-    )
-    folder = OUTPUT_ROOT / "FEATHER_embeddings" / place_name
-    folder.mkdir(parents=True, exist_ok=True)
-    path = folder / f"{place_name}_feather_embeddings.csv"
-    table.to_csv(path, index=True)
-    values = embedding.reshape(
-        len(embedding), order, 2, len(categories), eval_points
-    )
-    means = values.mean(axis=0)
-    high_low = high_low_summary(
-        values, distances, inputs["node_ids"], categories, config["high_low_percent"]
-    )
-    del distances
-    curve_folder = curve_root / "FEATHER_curves_mean" / place_name
-    print("Saving one FEATHER figure per amenity...", flush=True)
-    for index, category in enumerate(categories):
-        series = {
-            f"r = {r + 1}": means[r, :, index, :]
-            for r in range(order)
-        }
-        save_curves(
-            series, theta, f"{place} — {category.replace('_', ' ')}",
-            curve_folder / f"feather_{category}.png",
-        )
-    high_low_folder = (
-        curve_root / "FEATHER_curves_high_low" / place_name
-    )
-    print("Saving high/low distance curves with standard-deviation bands...", flush=True)
-    save_high_low_city(place, high_low, theta, config["high_low_percent"], high_low_folder)
-    print(f"Finished {place}.", flush=True)
-    # Only the largest order is needed for the cross-city figures.
-    last_groups = {
-        category: {
-            group: {
-                "mean": data["mean"][-1].copy(),
-                "std": data["std"][-1].copy(),
-                "count": data["count"],
-                "distance_min": data["distance_min"],
-                "distance_max": data["distance_max"],
-            }
-            for group, data in groups.items()
-        }
-        for category, groups in high_low.items()
-    }
-    return means[-1].copy(), last_groups
-
-def run_pipeline():
-    global CLIP_BUFFER_M, NEAREST_POIS
-    config = load_config(CONFIG_PATH)
-    if not 0 < config["high_low_percent"] <= 50:
-        raise ValueError("high_low_percent must be greater than 0 and at most 50.")
-    CLIP_BUFFER_M = config["CLIP_BUFFER_M"]
-    NEAREST_POIS = config["NEAREST_POIS"]
-    if min(CLIP_BUFFER_M, NEAREST_POIS, config["order"], config["eval_points"]) <= 0:
-        raise ValueError("Buffer, POI count, order and evaluation count must be positive.")
-    if not config["places"] or not config["resolved_categories"]:
-        raise ValueError("Configure at least one place and amenity category.")
-    print("\nFEATHER pipeline", flush=True)
-    print("Preparing city files; existing downloads will be reused...", flush=True)
-    index = get_geofabrik_index()
-    plan = build_download_plan(config["places"], index)
-    # Prepare missing city files before processing cities individually.
-    prepare_city_pbfs(plan)
-    del index
-    city_means = {}
-    city_groups = {}
-    for city in plan.to_dict(orient="records"):
-        city_means[city["place"]], city_groups[city["place"]] = process_city(city, config)
-        gc.collect()
-    order = config["order"]
-    theta = np.linspace(0.01, config["theta_max"], config["eval_points"])
-    folder = OUTPUT_ROOT / "FEATHER_curves" / "FEATHER_curves_mean"
-    print(f"Saving cross-city comparisons for r = {order}...", flush=True)
-    for index, category in enumerate(config["resolved_categories"]):
-        series = {
-            place: means[:, index, :]
-            for place, means in city_means.items()
-        }
-        save_curves(
-            series, theta,
-            f"{category.replace('_', ' ')} — city comparison, r = {order}",
-            folder / f"feather_{category}.png",
-        )
-    high_low_folder = OUTPUT_ROOT / "FEATHER_curves" / "FEATHER_curves_high_low"
-    print(f"Saving high/low cross-city comparisons for r = {order}...", flush=True)
-    save_high_low_comparisons(
-        city_groups, config["resolved_categories"], theta, order,
-        config["high_low_percent"], high_low_folder,
-    )
-    print("Pipeline finished.", flush=True)
-    save_figure(fig, destination)
 
 def save_interactive_data(place, graph_data, distances, boundary_path):
     nodes = graph_data["nodes"][["geometry"]]
@@ -1423,11 +942,16 @@ def process_city(city, config):
     for category in categories:
         distance_summary[f"{category}_mean_distance_m"] = distances[category]
         distance_summary[f"{category}_poi_count_up_to_{NEAREST_POIS}"] = poi_counts[category]
+    # Sum category distances only; counts and node IDs are not distances.
+    filled = fill_distances(distances[list(categories)])
+    distance_summary["total_distance_m"] = filled.sum(axis=1)
+    distance_summary["average_distance_m"] = filled.mean(axis=1)
+    del filled
     summary_folder = OUTPUT_ROOT / "POI_distances" / place_name
     summary_folder.mkdir(parents=True, exist_ok=True)
     summary_path = summary_folder / f"{place_name}_poi_distances.csv"
     distance_summary.to_csv(summary_path, index=True)
-    del poi_counts, distance_summary
+    del poi_counts
     del buffered, poi_data
     gc.collect()
     print("Saving distance maps at 600 DPI...", flush=True)
@@ -1436,12 +960,25 @@ def process_city(city, config):
         save_distance_map(
             place, category, municipality, distances[category], map_folder
         )
+    save_distance_map(
+        place, "all_categories_average", municipality,
+        distance_summary["average_distance_m"], map_folder, combined=True,
+    )
     save_interactive_data(
         place, municipality, distances, city["exact_boundary_path"]
     )
+    # Keep the CSV and maps complete; filter before creating embeddings.
+    graph, excluded = remove_distance_outliers(
+        municipality["graph"], distance_summary["average_distance_m"],
+        config["outlier_bottom_percent"], config["outlier_top_percent"],
+    )
+    distance_summary["feather_exclusion"] = excluded
+    distance_summary.to_csv(summary_path, index=True)
+    distances = distances.loc[list(graph.nodes)].copy()
+    del distance_summary, excluded
     print(f"Calculating FEATHER embeddings through r = {order}...", flush=True)
-    inputs = prepare_feather_inputs(municipality["graph"], distances, categories)
-    del municipality
+    inputs = prepare_feather_inputs(graph, distances, categories)
+    del municipality, graph
     model = FEATHER_new(
         theta_max=config["theta_max"], eval_points=eval_points, order=order
     )
@@ -1500,6 +1037,10 @@ def process_city(city, config):
 def run_pipeline():
     global CLIP_BUFFER_M, NEAREST_POIS
     config = load_config(CONFIG_PATH)
+    bottom = config["outlier_bottom_percent"]
+    top = config["outlier_top_percent"]
+    if not np.isfinite([bottom, top]).all() or min(bottom, top) < 0 or bottom + top >= 100:
+        raise ValueError("Outlier percentages must be non-negative and sum to less than 100.")
     if not 0 < config["high_low_percent"] <= 50:
         raise ValueError("high_low_percent must be greater than 0 and at most 50.")
     CLIP_BUFFER_M = config["CLIP_BUFFER_M"]
