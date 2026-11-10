@@ -912,23 +912,44 @@ def save_high_low_comparisons(city_groups, categories, theta, order, percent, fo
 
 
 def process_city(city, config):
-    # Process place
     place = city["place"]
     categories = config["resolved_categories"]
     order = config["order"]
     eval_points = config["eval_points"]
     theta = np.linspace(0.01, config["theta_max"], eval_points)
     place_name = safe_filename(place)
+
     curve_root = OUTPUT_ROOT / "FEATHER_curves"
+
+    summary_folder = OUTPUT_ROOT / "POI_distances" / place_name
+    summary_path = summary_folder / f"{place_name}_poi_distances.csv"
+    write_distance_csv = not summary_path.exists()
+
+    map_folder = OUTPUT_ROOT / "graph_POis" / place_name
+    embedding_folder = OUTPUT_ROOT / "FEATHER_embeddings" / place_name
+    embedding_path = (
+        embedding_folder / f"{place_name}_feather_embeddings.csv"
+    )
+    curve_folder = curve_root / "FEATHER_curves_mean" / place_name
+    high_low_folder = curve_root / "FEATHER_curves_high_low" / place_name
+
     print(f"\nProcessing {place}...", flush=True)
+
     buffered = build_graph_from_pbf(
         place, city["city_pbf_path"], city["city_dir"]
     )
     poi_data = extract_pois_from_city_pbf(
-        place, city["city_pbf_path"], city["city_dir"],
-        city["clip_boundary_path"], categories,
+        place,
+        city["city_pbf_path"],
+        city["city_dir"],
+        city["clip_boundary_path"],
+        categories,
     )
-    municipality = municipality_data(buffered, city["exact_boundary_path"])
+    municipality = municipality_data(
+        buffered, city["exact_boundary_path"]
+    )
+
+    # Needed for outlier filtering and high/low distance summaries.
     print("Calculating walking distances...", flush=True)
     distances, poi_counts = calculate_poi_distances(
         buffered, poi_data["features"], categories
@@ -936,88 +957,222 @@ def process_city(city, config):
     distances = distances.reindex(municipality["nodes"].index)
     poi_counts = poi_counts.reindex(municipality["nodes"].index)
 
-    # Keep mean distance beside the number of POIs used.
     distance_summary = pd.DataFrame(index=distances.index)
     distance_summary.index.name = "node_id"
+
     for category in categories:
         distance_summary[f"{category}_mean_distance_m"] = distances[category]
-        distance_summary[f"{category}_poi_count_up_to_{NEAREST_POIS}"] = poi_counts[category]
-    # Sum category distances only; counts and node IDs are not distances.
+        distance_summary[
+            f"{category}_poi_count_up_to_{NEAREST_POIS}"
+        ] = poi_counts[category]
+
+    # Sum category distances only.
     filled = fill_distances(distances[list(categories)])
     distance_summary["total_distance_m"] = filled.sum(axis=1)
     distance_summary["average_distance_m"] = filled.mean(axis=1)
-    del filled
-    summary_folder = OUTPUT_ROOT / "POI_distances" / place_name
-    summary_folder.mkdir(parents=True, exist_ok=True)
-    summary_path = summary_folder / f"{place_name}_poi_distances.csv"
-    distance_summary.to_csv(summary_path, index=True)
-    del poi_counts
-    del buffered, poi_data
+
+    del filled, poi_counts, buffered, poi_data
     gc.collect()
-    print("Saving distance maps at 600 DPI...", flush=True)
-    map_folder = OUTPUT_ROOT / "graph_POis" / place_name
-    for category in categories:
+
+    # Skip distance-map generation if this city's folder already exists.
+    if not map_folder.exists():
+        print("Saving distance maps at 600 DPI...", flush=True)
+        map_folder.mkdir(parents=True, exist_ok=True)
+
+        for category in categories:
+            save_distance_map(
+                place,
+                category,
+                municipality,
+                distances[category],
+                map_folder,
+            )
+
         save_distance_map(
-            place, category, municipality, distances[category], map_folder
+            place,
+            "all_categories_average",
+            municipality,
+            distance_summary["average_distance_m"],
+            map_folder,
+            combined=True,
         )
-    save_distance_map(
-        place, "all_categories_average", municipality,
-        distance_summary["average_distance_m"], map_folder, combined=True,
-    )
-    save_interactive_data(
-        place, municipality, distances, city["exact_boundary_path"]
-    )
-    # Keep the CSV and maps complete; filter before creating embeddings.
+    else:
+        print(
+            f"Skipping existing distance-map folder: {map_folder}",
+            flush=True,
+        )
+
+
+    # Keep maps and the distance CSV complete; filter only for FEATHER.
     graph, excluded = remove_distance_outliers(
-        municipality["graph"], distance_summary["average_distance_m"],
-        config["outlier_bottom_percent"], config["outlier_top_percent"],
+        municipality["graph"],
+        distance_summary["average_distance_m"],
+        config["outlier_bottom_percent"],
+        config["outlier_top_percent"],
     )
     distance_summary["feather_exclusion"] = excluded
-    distance_summary.to_csv(summary_path, index=True)
+
+    if write_distance_csv:
+        summary_folder.mkdir(parents=True, exist_ok=True)
+        distance_summary.to_csv(summary_path, index=True)
+        print(f"Saved distance CSV: {summary_path}", flush=True)
+    else:
+        print(
+            f"Skipping existing distance CSV: {summary_path}",
+            flush=True,
+        )
+
     distances = distances.loc[list(graph.nodes)].copy()
     del distance_summary, excluded
-    print(f"Calculating FEATHER embeddings through r = {order}...", flush=True)
-    inputs = prepare_feather_inputs(graph, distances, categories)
-    del municipality, graph
-    model = FEATHER_new(
-        theta_max=config["theta_max"], eval_points=eval_points, order=order
+
+    expected_columns = list(
+        embedding_columns(categories, order, eval_points)
     )
-    model.fit(graph=inputs["graph"], X=inputs["features"])
-    embedding = model.get_embedding()
-    table = pd.DataFrame(
-        embedding,
-        index=pd.Index(inputs["node_ids"], name="node_id"),
-        columns=embedding_columns(categories, order, eval_points),
-    )
-    folder = OUTPUT_ROOT / "FEATHER_embeddings" / place_name
-    folder.mkdir(parents=True, exist_ok=True)
-    path = folder / f"{place_name}_feather_embeddings.csv"
-    table.to_csv(path, index=True)
+
+    # Load saved embeddings instead of running FEATHER again.
+    if embedding_path.is_file():
+        print(
+            f"Loading saved FEATHER embeddings: {embedding_path}",
+            flush=True,
+        )
+
+        # Preserve node IDs when reading the CSV.
+        index_column = pd.read_csv(
+            embedding_path, nrows=0
+        ).columns[0]
+        table = pd.read_csv(
+            embedding_path,
+            dtype={index_column: str},
+            index_col=0,
+        )
+        table.index = table.index.map(str)
+
+        node_ids = list(graph.nodes)
+        expected_index = pd.Index([str(node) for node in node_ids])
+
+        if not table.index.is_unique or not table.columns.is_unique:
+            raise ValueError(
+                f"Saved embeddings contain duplicate rows or columns: "
+                f"{embedding_path}"
+            )
+
+        if set(table.columns) != set(expected_columns):
+            raise ValueError(
+                f"Saved embedding columns do not match the current "
+                f"categories, order, or evaluation points: {embedding_path}. "
+                "Move or delete this CSV to calculate fresh embeddings."
+            )
+
+        if set(table.index) != set(expected_index):
+            raise ValueError(
+                f"Saved embedding nodes do not match the current "
+                f"filtered graph: {embedding_path}. "
+                "Move or delete this CSV to calculate fresh embeddings."
+            )
+
+        # Match saved rows and columns to the current expected order.
+        embedding = table.loc[
+            expected_index, expected_columns
+        ].to_numpy(dtype=float)
+
+        if not np.isfinite(embedding).all():
+            raise ValueError(
+                f"Saved embeddings contain missing or non-finite "
+                f"values: {embedding_path}"
+            )
+
+        del table, municipality, graph
+
+    else:
+        print(
+            f"Calculating FEATHER embeddings through r = {order}...",
+            flush=True,
+        )
+        inputs = prepare_feather_inputs(graph, distances, categories)
+        del municipality, graph
+
+        model = FEATHER_new(
+            theta_max=config["theta_max"],
+            eval_points=eval_points,
+            order=order,
+        )
+        model.fit(graph=inputs["graph"], X=inputs["features"])
+        embedding = model.get_embedding()
+        node_ids = list(inputs["node_ids"])
+
+        table = pd.DataFrame(
+            embedding,
+            index=pd.Index(node_ids, name="node_id"),
+            columns=expected_columns,
+        )
+
+        embedding_folder.mkdir(parents=True, exist_ok=True)
+        table.to_csv(embedding_path, index=True)
+        del table, inputs, model
+
+        print(
+            f"Saved FEATHER embeddings: {embedding_path}",
+            flush=True,
+        )
+
+    # Summaries are required for the returned cross-city results.
     values = embedding.reshape(
         len(embedding), order, 2, len(categories), eval_points
     )
     means = values.mean(axis=0)
     high_low = high_low_summary(
-        values, distances, inputs["node_ids"], categories, config["high_low_percent"]
+        values,
+        distances,
+        node_ids,
+        categories,
+        config["high_low_percent"],
     )
     del distances
-    curve_folder = curve_root / "FEATHER_curves_mean" / place_name
-    print("Saving one FEATHER figure per amenity...", flush=True)
-    for index, category in enumerate(categories):
-        series = {
-            f"r = {r + 1}": means[r, :, index, :]
-            for r in range(order)
-        }
-        save_curves(
-            series, theta, f"{place} — {category.replace('_', ' ')}",
-            curve_folder / f"feather_{category}.png",
+
+    # Skip all mean-curve plotting if this city's folder exists.
+    if not curve_folder.exists():
+        print("Saving one FEATHER figure per amenity...", flush=True)
+        curve_folder.mkdir(parents=True, exist_ok=True)
+
+        for index, category in enumerate(categories):
+            series = {
+                f"r = {r + 1}": means[r, :, index, :]
+                for r in range(order)
+            }
+
+            save_curves(
+                series,
+                theta,
+                f"{place} — {category.replace('_', ' ')}",
+                curve_folder / f"feather_{category}.png",
+            )
+    else:
+        print(
+            f"Skipping existing FEATHER mean-curve folder: {curve_folder}",
+            flush=True,
         )
-    high_low_folder = (
-        curve_root / "FEATHER_curves_high_low" / place_name
-    )
-    print("Saving high/low distance curves with standard-deviation bands...", flush=True)
-    save_high_low_city(place, high_low, theta, config["high_low_percent"], high_low_folder)
-    print(f"Finished {place}.", flush=True)
+
+    # Skip all high/low plotting if this city's folder exists.
+    if not high_low_folder.exists():
+        print(
+            "Saving high/low distance curves with standard-deviation bands...",
+            flush=True,
+        )
+        high_low_folder.mkdir(parents=True, exist_ok=True)
+
+        save_high_low_city(
+            place,
+            high_low,
+            theta,
+            config["high_low_percent"],
+            high_low_folder,
+        )
+    else:
+        print(
+            f"Skipping existing FEATHER high/low-curve folder: {high_low_folder}",
+            flush=True,
+        )
+
     # Only the largest order is needed for the cross-city figures.
     last_groups = {
         category: {
@@ -1032,6 +1187,9 @@ def process_city(city, config):
         }
         for category, groups in high_low.items()
     }
+
+    print(f"Finished {place}.", flush=True)
+
     return means[-1].copy(), last_groups
 
 def run_pipeline():

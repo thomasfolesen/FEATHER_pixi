@@ -1,9 +1,4 @@
-"""Run both FEATHER implementations on the pipeline's cached city data.
-pixi run python explore/FEATHER_comparisons.py
-runs only for places given in config file
-see output/FEATHER_comparisons for files
-"""
-
+"""Run both FEATHER implementations on the pipeline's cached city data."""
 
 import pickle
 import re
@@ -37,6 +32,8 @@ def load_config(path):
             continue
         key, value = line.split("=", 1)
         key, value = key.strip(), value.strip()
+        if key == "pattern_clusters":
+            continue  # Used only by classification/FEATHER_patterns.py.
         if key == "place":
             config["places"] = parse_config_list(value)
         elif key in ("theta_max", "CLIP_BUFFER_M", "eval_points", "order"):
@@ -126,53 +123,129 @@ def node_positions(graph, node_ids):
     return np.asarray(positions)
 
 
-def save_comparison(place, folder, graph, node_ids, old_embedding, new_embedding):
-    old_norm = np.linalg.norm(old_embedding, axis=1)
-    new_norm = np.linalg.norm(new_embedding, axis=1)
-    denominator = old_norm * new_norm
-    cosine = np.divide(
-        np.sum(old_embedding * new_embedding, axis=1), denominator,
-        out=np.full(len(node_ids), np.nan), where=denominator > 0,
+def comparison_scores(old, new):
+    """Compare corresponding embedding rows."""
+    denominator = np.linalg.norm(old, axis=1) * np.linalg.norm(new, axis=1)
+    similarity = np.divide(
+        np.sum(old * new, axis=1), denominator,
+        out=np.full(len(old), np.nan), where=denominator > 0,
     )
-    difference = np.mean(np.abs(old_embedding - new_embedding), axis=1)
-    positions = node_positions(graph, node_ids)
+    # Zero vectors have no direction, so their similarity stays missing.
+    similarity = np.clip(similarity, -1, 1)
+    difference = np.mean(np.abs(old - new), axis=1)
+    return similarity, difference
 
-    folder.mkdir(parents=True, exist_ok=True)
-    results = pd.DataFrame({
-        "node_id": node_ids,
-        "cosine_similarity": cosine,
-        "mean_absolute_embedding_difference": difference,
-    })
-    results.to_csv(folder / "node_comparison.csv", index=False)
 
-    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
-    for ax, values, title, cmap, limits in (
-        (axes[0], cosine, "Cosine similarity", "viridis", (-1, 1)),
-        (axes[1], difference, "Mean absolute embedding difference", "magma", None),
-    ):
-        points = ax.scatter(
-            positions[:, 0], positions[:, 1], c=values, s=2,
-            cmap=cmap, vmin=limits[0] if limits else None,
-            vmax=limits[1] if limits else None,
-        )
-        fig.colorbar(points, ax=ax, shrink=0.75)
-        ax.set_title(title)
-        ax.set_aspect("equal", adjustable="datalim")
-        ax.set_axis_off()
-    fig.suptitle(f"{place}: FEATHER vs FEATHER_new")
+def comparison_blocks(old_embedding, new_embedding, config):
+    """Split the layout used by both FEATHER implementations."""
+    shape = (len(old_embedding), config["order"], 2,
+             len(config["categories"]), config["eval_points"])
+    # Within each order: all cosine values, followed by all sine values.
+    old = old_embedding.reshape(shape)
+    new = new_embedding.reshape(shape)
+    for order in [None, *range(config["order"])]:
+        scope = "overall" if order is None else f"r{order + 1}"
+        a = old if order is None else old[:, order:order + 1]
+        b = new if order is None else new[:, order:order + 1]
+        for component, index in (("both", None), ("cosine", 0), ("sine", 1)):
+            left = a if index is None else a[:, :, index]
+            right = b if index is None else b[:, :, index]
+            yield scope, component, left.reshape(len(old), -1), right.reshape(len(new), -1)
+
+
+def save_difference_map(place, title, positions, difference, limit, path):
+    fig, ax = plt.subplots(figsize=(7, 6))
+    points = ax.scatter(
+        *positions.T, c=difference, s=2,
+        cmap="magma", vmin=0, vmax=limit,
+    )
+    fig.colorbar(points, ax=ax, shrink=0.75, label="Mean absolute embedding difference")
+    ax.set_title(f"{place}: FEATHER vs FEATHER_new\n{title}")
+    ax.set_aspect("equal", adjustable="datalim")
+    ax.set_axis_off()
     fig.tight_layout()
-    fig.savefig(folder / "embedding_comparison.png", dpi=600, bbox_inches="tight")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=600, bbox_inches="tight")
     plt.close(fig)
 
-    summary = (
-        f"Place: {place}\n"
-        f"Compared nodes: {len(node_ids)}\n"
-        f"Embedding dimensions: {old_embedding.shape[1]}\n"
-        f"Mean cosine similarity: {np.nanmean(cosine):.6f}\n"
-        f"Mean absolute embedding difference: {difference.mean():.6f}\n"
+
+def save_order_plot(place, summary, folder):
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    orders = summary[summary["scope"] != "overall"].copy()
+    orders["r"] = orders["scope"].str[1:].astype(int)
+    for component, color in (("both", "black"), ("cosine", "tab:blue"), ("sine", "tab:orange")):
+        rows = orders[orders["component"] == component]
+        label = "Cosine and sine" if component == "both" else component.title()
+        ax.plot(rows["r"], rows["mean_absolute_embedding_difference"],
+                marker="o", label=label, color=color)
+    ax.set_xticks(sorted(orders["r"].unique()))
+    ax.set_xlabel("Walk order r")
+    ax.set_ylabel("Mean absolute embedding difference across vertices")
+    ax.set_ylim(bottom=0)
+    ax.grid(alpha=0.2)
+    ax.legend()
+    ax.set_title(f"{place}: differences by walk order")
+    fig.tight_layout()
+    fig.savefig(folder / "comparison_by_order.png", dpi=600, bbox_inches="tight")
+    plt.close(fig)
+
+
+def save_comparison(place, folder, graph, node_ids, old_embedding, new_embedding, config):
+    expected = config["order"] * 2 * len(config["categories"]) * config["eval_points"]
+    for embedding in (old_embedding, new_embedding):
+        if embedding.shape != (len(node_ids), expected) or not np.isfinite(embedding).all():
+            raise ValueError("Embeddings must be finite and match the configured dimensions.")
+    positions = node_positions(graph, node_ids)
+    results = pd.DataFrame(index=pd.Index(node_ids, name="node_id"))
+    rows = []
+    for scope, component, old, new in comparison_blocks(old_embedding, new_embedding, config):
+        similarity, difference = comparison_scores(old, new)
+        prefix = "" if (scope, component) == ("overall", "both") else f"{scope}_{component}_"
+        results[prefix + "cosine_similarity"] = similarity
+        results[prefix + "mean_absolute_embedding_difference"] = difference
+        valid = np.isfinite(similarity)
+        rows.append({
+            "scope": scope, "component": component,
+            "mean_cosine_similarity": similarity[valid].mean() if valid.any() else np.nan,
+            "mean_absolute_embedding_difference": difference.mean(),
+            "vertices": len(node_ids), "valid_similarity_vertices": int(valid.sum()),
+        })
+    summary = pd.DataFrame(rows)
+    folder.mkdir(parents=True, exist_ok=True)
+    results.to_csv(folder / "node_comparison.csv")
+    summary.to_csv(folder / "comparison_summary.csv", index=False)
+
+    # Share the difference scale across components and orders within this city.
+    difference_columns = [name for name in results if name.endswith("mean_absolute_embedding_difference")]
+    limit = results[difference_columns].max().max()
+    limit = float(limit) if limit > 0 else 1.0
+    for row in rows:
+        scope, component = row["scope"], row["component"]
+        if scope == "overall":
+            continue
+        prefix = f"{scope}_{component}_"
+        destination = folder / scope
+        filename = "embedding_comparison.png" if component == "both" else f"{component}_comparison.png"
+        title = f"{scope} — {'cosine and sine' if component == 'both' else component} components"
+        save_difference_map(
+            place, title, positions,
+            results[prefix + "mean_absolute_embedding_difference"].to_numpy(),
+            limit, destination / filename,
+        )
+    save_order_plot(place, summary, folder)
+    # Remove the three overall maps produced by earlier versions.
+    for filename in ("embedding_comparison.png", "cosine_comparison.png", "sine_comparison.png"):
+        (folder / filename).unlink(missing_ok=True)
+    text = (
+        f"Place: {place}\nCompared nodes: {len(node_ids)}\n"
+        "Cosine similarity is applied to both, cosine-only and sine-only components.\n"
+        "Each comparison includes all categories and evaluation points in its scope.\n"
+        "Maps show mean absolute differences; undefined similarities are blank in the CSV.\n"
+        "Map difference scales are shared within this city, not across cities.\n\n"
+        + summary.to_string(index=False) + "\n"
     )
-    (folder / "summary.txt").write_text(summary, encoding="utf-8")
-    print(summary)
+    (folder / "summary.txt").write_text(text, encoding="utf-8")
+    print(text)
 
 
 def main():
@@ -211,7 +284,7 @@ def main():
             # Keep coordinates from the original cached graph for the map.
             save_comparison(
                 place, OUTPUT_ROOT / safe_filename(place),
-                loaded[0], node_ids, old_embedding, new_embedding,
+                loaded[0], node_ids, old_embedding, new_embedding, config,
             )
         except (KeyError, ValueError) as error:
             print(f"{place}: comparison skipped: {error}")
