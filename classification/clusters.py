@@ -267,7 +267,6 @@ def main():
     (OUTPUT_ROOT / "run_notes.json").write_text(json.dumps(notes, indent=2, ensure_ascii=False), encoding="utf-8")
     print(memberships.to_string())
     print(f"\nSaved {model.n_clusters} exploratory clusters to {OUTPUT_ROOT}")
-    print("Inspect the maps before naming clusters. Adding places may change the groups.")
 
 
 if __name__ == "__main__":

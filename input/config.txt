@@ -1,18 +1,18 @@
 # list of places to download from Geofabrik
-place = [[Copenhagen Municipality, Denmark], [Polla, Salerno, Campania, Italy], [Bremen, Germany], [Asti, Piedmont, Italy], [Mysłowice, Silesian Voivodeship, Poland], [Boulogne-Billancourt, Hauts-de-Seine, France], [Freiburg im Breisgau, Baden-Württemberg, Germany], [Calw, Baden-Württemberg, Germany], [Belgrade, Serbia], [Nové Bránice, Czech Republic], [Thomasberg, Austria], [Nevers, France], [Lillehammer, Norway], [Joensuu, Finland], [Lübeck, Germany], [Almere, Netherlands], [Zoetermeer, Netherlands], [Reims, France], [Pamplona, Navarre, Spain], [Sigüés, Zaragoza, Spain], [Yeste, Albacete, Spain], [Sezures, Portugal], [Prova, Portugal], [Bayeux, Calvados, France], [Provins, Seine-et-Marne, France], [Sarlat-la-Canéda, Dordogne, France], [Quedlinburg, Saxony-Anhalt, Germany], [Wernigerode, Saxony-Anhalt, Germany], [Goslar, Lower Saxony, Germany], [Cittadella, Padua, Veneto, Italy], [Marostica, Vicenza, Veneto, Italy], [Cividale del Friuli, Friuli-Venezia Giulia, Italy], [Doesburg, Gelderland, Netherlands], [Hattem, Gelderland, Netherlands], [Oudewater, Utrecht, Netherlands], [Honfleur, Calvados, France], [Dinan, Côtes-d'Armor, France], [Falaise, Calvados, France], [Vitré, Ille-et-Vilaine, France], [Guérande, Loire-Atlantique, France], [Chinon, Indre-et-Loire, France], [Beaune, Côte-d'Or, France], [Dole, Jura, France], [Arbois, Jura, France], [Moulins, Allier, France], [Sées, Orne, France], [Étretat, Seine-Maritime, France], [Lüneburg, Lower Saxony, Germany], [Wismar, Mecklenburg-Vorpommern, Germany], [Stade, Lower Saxony, Germany], [Hameln, Lower Saxony, Germany], [Zittau, Saxony, Germany], [Bautzen, Saxony, Germany], [Görlitz, Saxony, Germany], [Meißen, Saxony, Germany], [Freudenstadt, Baden-Württemberg, Germany], [Uelzen, Lower Saxony, Germany], [Prachatice, South Bohemian Region, Czech Republic], [Třeboň, South Bohemian Region, Czech Republic], [Kutná Hora, Central Bohemian Region, Czech Republic], [Litomyšl, Pardubice Region, Czech Republic], [Mikulov, South Moravian Region, Czech Republic], [Telč, Vysočina Region, Czech Republic], [Kroměříž, Zlín Region, Czech Republic], [Polička, Pardubice Region, Czech Republic], [Cēsis, Latvia], [Kuldīga, Latvia], [Viljandi, Estonia], [Haapsalu, Estonia], [Paide, Estonia], [Trakai, Lithuania], [Druskininkai, Lithuania], [Birštonas, Lithuania], [Sirmione, Brescia, Lombardy, Italy], [Bardolino, Verona, Veneto, Italy], [Lazise, Verona, Veneto, Italy], [Peschiera del Garda, Verona, Veneto, Italy], [Asolo, Treviso, Veneto, Italy], [Feltre, Belluno, Veneto, Italy], [Conegliano, Treviso, Veneto, Italy], [Hondarribia, Gipuzkoa, Basque Country, Spain], [Getaria, Gipuzkoa, Basque Country, Spain], [Haro, La Rioja, Spain], [Zafra, Badajoz, Extremadura, Spain], [Olite, Navarre, Spain], [Estella-Lizarra, Navarre, Spain], [Laguardia, Álava, Basque Country, Spain], [Besalú, Girona, Catalonia, Spain], [Cadaqués, Girona, Catalonia, Spain], [Óbidos, Leiria, Portugal], [Nazaré, Leiria, Portugal], [Vila Real de Santo António, Faro, Portugal], [São João da Madeira, Aveiro, Portugal], [Entroncamento, Santarém, Portugal], [Solothurn, Switzerland], [Appenzell, Appenzell Innerrhoden, Switzerland], [Stans, Nidwalden, Switzerland], [Gmunden, Upper Austria, Austria], [Fanø Municipality, Denmark], [Rauma, Satakunta, Finland]]
+# too big places = [[Paris, France]]
+place = [[Paris, France], [Copenhagen Municipality, Denmark], [Barcelona, Catalonia, Spain], [Amsterdam, North Holland, Netherlands], [Polla, Salerno, Campania, Italy], [Milton Keynes, England, United Kingdom], [Swindon, England, United Kingdom], [Oulu, Finland]]
 #float on the x-asis what should the max value be?
-theta_max = 15
+theta_max = 45
 #int how many points to look at
-eval_points = 20
+eval_points = 40
 #int. known as r from article
 order = 7
 #int sets max distance to amenity and also geo downloaded and used around graph for place
 CLIP_BUFFER_M = 2000
 #int how many POI's and their mean shall be used for the feature value of the vertice
-NEAREST_POIS = 15
-# float percentage of vertices to remove based on average distance to all amenity types
-outlier_bottom_percent = 0.125
-outlier_top_percent = 0.125
+NEAREST_POIS = 10
+# float IQR fence multiplier -  larger values removes fewer vertices
+outlier_iqr_multiplier = 1.5
 #float. for the sin + cos curves looking at top and bot nodes what is the cutoff for these?
 high_low_percent = 1
 #list of places based on OSM taxonomy

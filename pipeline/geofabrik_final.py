@@ -30,43 +30,61 @@ GEOFABRIK_INDEX_URL = "https://download.geofabrik.de/index-v1.json"
 GEOFABRIK_WAIT_SECONDS = 60 # change this if server connection fails due to repeated tries / overload to server
 NETWORK_TYPE = "walking"
 
+
 def parse_config_list(value):
     """parse items like places and ammenitie OSM types in the form of
+
         place = [[Copenhagen Municipality, Denmark], [Polla, Salerno, Campania, Italy]]
+
     to something more useable like
+
         ["Copenhagen Municipality, Denmark", "Polla, Salerno, Campania, Italy",]
+
     """
     return [
         item.strip()
         for item in re.findall(r"\[([^\[\]]+)\]", value)
     ]
 
+
 def load_config(path):
-    """
-    Load parameters from config file
-    """
+    """Load parameters and amenity categories from the config file."""
     config = {
         "resolved_categories": {},
-        # Percentages: 0.125 means 0.125%, not 12.5%.
-        "outlier_bottom_percent": 0.125,
-        "outlier_top_percent": 0.125,
+        "outlier_iqr_multiplier": 1.5,
     }
+
     for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
-        if not line or line.startswith("#"): #if empty line or a comment do nothing
+        if not line or line.startswith("#"):
             continue
+
         key, value = line.split("=", 1)
         key = key.strip()
         value = value.strip()
+
+        # Places
         if key == "place":
             config["places"] = parse_config_list(value)
+
+        # Float values
         elif key in (
-            "theta_max", "high_low_percent",
-            "outlier_bottom_percent", "outlier_top_percent",
+            "theta_max",
+            "high_low_percent",
+            "outlier_iqr_multiplier",
         ):
             config[key] = float(value)
-        elif key in ("eval_points", "order", "CLIP_BUFFER_M", "NEAREST_POIS"):
+
+        # Integer values
+        elif key in (
+            "eval_points",
+            "order",
+            "CLIP_BUFFER_M",
+            "NEAREST_POIS",
+        ):
             config[key] = int(value)
+
+        # Amenity categories
         else:
             tags = []
             for entry in parse_config_list(value):
@@ -75,19 +93,34 @@ def load_config(path):
                     "osm_key": osm_key.strip(),
                     "osm_tag": osm_tag.strip(),
                 })
+
             config["resolved_categories"][key] = tags
+
+    multiplier = config["outlier_iqr_multiplier"]
+    if not np.isfinite(multiplier) or multiplier <= 0:
+        raise ValueError(
+            "outlier_iqr_multiplier must be finite and positive."
+        )
+
     return config
+
 
 def safe_filename(place):
     """
+
     make sure names of file and folders are safe to use
+
     """
     return re.sub(r"[^a-zA-Z]+", "_", place).strip("_").lower()
 
+
 def get_geofabrik_index():
     """
+
     Get geofabrik index
+
     put into: cache/geofabrik/index-v1.json
+
     """
     index_path = CACHE_ROOT / "geofabrik" / "index-v1.json"
     index_path.parent.mkdir(parents=True, exist_ok=True)
@@ -106,14 +139,22 @@ def get_geofabrik_index():
         print("Using cached Geofabrik index.", flush=True)
     return json.loads(index_path.read_text(encoding="utf-8"))
 
+
 def city_boundaries(place):
     """
+
     Load cached boundaries for the given place, or create and save them.
+
     OSMnx fetches the municipality boundary if it is not cached.
+
     A second boundary is expanded outward by CLIP_BUFFER_M metres (2000).
+
     Files are saved in cache/place:
+
     - municipality_boundary.geojson
+
     - municipality_clip_boundary_{CLIP_BUFFER_M}m.geojson
+
     """
     city_dir = CACHE_ROOT / safe_filename(place)
     city_dir.mkdir(parents=True, exist_ok=True)
@@ -147,11 +188,16 @@ def city_boundaries(place):
         "clip_boundary_path": clip_path,
     }
 
+
 def select_source(index, clip_boundary):
     """
+
     Choose a European Geofabrik extract for the buffered city boundary.
+
     Prefer the smallest region covering the whole boundary.
+
     If none exist, choose the smallest region covering a point inside it.
+
     """
     # Look up each region's properties by its ID.
     properties = {
@@ -199,6 +245,7 @@ def select_source(index, clip_boundary):
     # Select by geographic area, not download file size.
     return min(full_city or candidates, key=lambda candidate: candidate["area"])
 
+
 def build_download_plan(places, index):
     """Create a table of source regions, cache paths, and cached city PBF files."""
     rows = []
@@ -224,6 +271,7 @@ def build_download_plan(places, index):
         })
     return pd.DataFrame(rows)
 
+
 def download_pbf(url, destination):
     if destination.exists():
         print(f"Using cached file for {destination.name}", flush=True)
@@ -238,8 +286,10 @@ def download_pbf(url, destination):
                 file.write(chunk)
     print(f"Downloaded: {destination}", flush=True)
 
+
 def clip_pbf(regional_pbf, polygon_path, output_pbf):
     """Clip a regional PBF to the boundary in polygon_path.
+
     Using osmium via a subprocess  https://osmcode.org/libosmium/ """
     subprocess.run(
         [
@@ -253,6 +303,7 @@ def clip_pbf(regional_pbf, polygon_path, output_pbf):
         ],
         check=True,
     )
+
 
 def prepare_city_pbfs(download_plan):
     """Create missing city PBFs, return summary metadata"""
@@ -549,6 +600,7 @@ def calculate_poi_distances(graph_data, pois, categories):
         poi_counts[category] = nearest.notna().sum(axis=1)
     return distances, poi_counts
 
+
 def save_distance_map(place, category, graph_data, distances, folder, combined=False):
     nodes = graph_data["nodes"].copy()
     nodes["distance"] = distances.reindex(nodes.index)
@@ -565,6 +617,11 @@ def save_distance_map(place, category, graph_data, distances, folder, combined=F
         note = (
             "Each category has equal weight; missing category distances "
             f"are set to {CLIP_BUFFER_M:,} m.\n"
+        )
+        note += (
+            "Only nodes retained for FEATHER are shown after IQR filtering "
+            "and isolated-node removal.\n"
+            "Distances were calculated on the original buffered road network.\n"
         )
     with plt.style.context("default"):
         fig, ax = plt.subplots(figsize=(14, 11))
@@ -633,6 +690,7 @@ def save_distance_map(place, category, graph_data, distances, folder, combined=F
         plt.close(fig)
     return image_path
 
+
 def fill_distances(distances):
     """Use the same missing-distance replacement for totals and FEATHER."""
     features = distances.copy()
@@ -646,41 +704,125 @@ def fill_distances(distances):
     ).fillna(CLIP_BUFFER_M)
 
 
-def remove_distance_outliers(graph, scores, bottom_percent, top_percent):
-    """Remove the configured tails, then nodes without neighbours."""
-    if (
-        not np.isfinite([bottom_percent, top_percent]).all()
-        or min(bottom_percent, top_percent) < 0
-        or bottom_percent + top_percent >= 100
-    ):
-        raise ValueError("Outlier percentages must be non-negative and sum to less than 100.")
+def remove_distance_outliers(graph, scores, iqr_multiplier=1.5):
+    """Remove nodes outside Tukey's IQR fences, then isolated nodes."""
+    if not np.isfinite(iqr_multiplier) or iqr_multiplier <= 0:
+        raise ValueError("iqr_multiplier must be finite and positive.")
+
     if scores.empty or not np.isfinite(scores.to_numpy()).all():
         raise ValueError("Outlier scores must be non-empty and finite.")
 
-    # Round down; break equal scores by node ID so repeated runs agree.
-    ranked = scores.sort_index().sort_values(kind="stable")
-    bottom_count = int(len(ranked) * bottom_percent / 100)
-    top_count = int(len(ranked) * top_percent / 100)
-    excluded = pd.Series("", index=scores.index, name="feather_exclusion")
-    if bottom_count:
-        excluded.loc[ranked.index[:bottom_count]] = "bottom_outlier"
-    if top_count:
-        excluded.loc[ranked.index[-top_count:]] = "top_outlier"
+    q1 = scores.quantile(0.25)
+    q3 = scores.quantile(0.75)
+    iqr = q3 - q1
 
-    filtered = graph.subgraph(excluded.index[excluded == ""]).copy()
-    # A neighbour-only walk cannot start from an isolated node.
+    lower = q1 - iqr_multiplier * iqr
+    upper = q3 + iqr_multiplier * iqr
+
+    excluded = pd.Series(
+        "", index=scores.index, name="feather_exclusion"
+    )
+    excluded.loc[scores < lower] = "bottom_outlier"
+    excluded.loc[scores > upper] = "top_outlier"
+
+    bottom_count = int((excluded == "bottom_outlier").sum())
+    top_count = int((excluded == "top_outlier").sum())
+
+    filtered = graph.subgraph(
+        excluded.index[excluded == ""]
+    ).copy()
+
     isolated = list(nx.isolates(filtered))
     excluded.loc[isolated] = "no_neighbours"
     filtered.remove_nodes_from(isolated)
+
     print(
-        f"Excluded {bottom_count} bottom and {top_count} top distance outliers "
-        f"({bottom_percent:g}% and {top_percent:g}%), plus {len(isolated)} "
-        f"nodes without neighbours; {len(filtered)} nodes remain.",
+        f"IQR={iqr:.2f} m; fences=[{lower:.2f}, {upper:.2f}] m. "
+        f"Excluded {bottom_count} bottom and {top_count} top outliers, "
+        f"plus {len(isolated)} isolated nodes; "
+        f"{len(filtered)} nodes remain.",
         flush=True,
     )
-    if not filtered:
-        raise ValueError("No connected pairs of nodes remain for FEATHER.")
+
     return filtered, excluded
+
+
+def save_iqr_figure(place, scores, iqr_multiplier):
+    """Plot IQR thresholds using the same scores as outlier filtering."""
+
+    filename = re.sub(r"[^\w-]+", "_", place).strip("_")
+    output_dir = (
+        Path(CONFIG_PATH).parent.parent / "output" / "graph_IQR" / filename
+    )
+    output_path = output_dir / f"{filename}_IQR.png"
+
+    if output_dir.exists():
+        print(f"Skipping existing IQR folder: {output_dir}", flush=True)
+        return output_path
+
+    q1 = scores.quantile(0.25)
+    median = scores.quantile(0.50)
+    q3 = scores.quantile(0.75)
+    iqr = q3 - q1
+
+    lower = q1 - iqr_multiplier * iqr
+    upper = q3 + iqr_multiplier * iqr
+
+    below = int((scores < lower).sum())
+    above = int((scores > upper).sum())
+
+    output_dir = Path(CONFIG_PATH).parent.parent / "output" / "graph_IQR"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    ax.hist(
+        scores,
+        bins=50,
+        color="#94a3b8",
+        edgecolor="white",
+        label="Node scores",
+    )
+
+    ax.axvspan(
+        q1, q3, color="#22c55e", alpha=0.2,
+        label=f"IQR = {iqr:.1f} m",
+    )
+
+    for value, label, color, style in [
+        (lower, "Lower fence", "#dc2626", "--"),
+        (q1, "Q1 (25%)", "#15803d", ":"),
+        (median, "Median (50%)", "#1d4ed8", "-"),
+        (q3, "Q3 (75%)", "#15803d", ":"),
+        (upper, "Upper fence", "#dc2626", "--"),
+    ]:
+        ax.axvline(
+            value,
+            color=color,
+            linestyle=style,
+            linewidth=2,
+            label=f"{label}: {value:.1f} m",
+        )
+
+    ax.set_title(
+        f"{place}\n"
+        f"IQR multiplier: {iqr_multiplier:g} | "
+        f"Nodes: {len(scores):,} | "
+        f"Below fence: {below:,} | Above fence: {above:,}"
+    )
+    ax.set_xlabel("Average distance across amenity categories (m)")
+    ax.set_ylabel("Number of nodes")
+    ax.grid(axis="y", alpha=0.2)
+    ax.set_axisbelow(True)
+    ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1))
+
+    fig.tight_layout()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+
+    print(f"Saved IQR figure: {output_path}", flush=True)
+    return output_path
 
 
 def prepare_feather_inputs(graph, distances, categories):
@@ -698,6 +840,7 @@ def prepare_feather_inputs(graph, distances, categories):
         "node_ids": node_ids,
         "categories": list(categories),
     }
+
 
 def municipality_data(graph_data, boundary_path):
     boundary = (
@@ -718,6 +861,7 @@ def municipality_data(graph_data, boundary_path):
         "edges": edges.loc[keep].copy(),
     }
 
+
 def embedding_columns(categories, order, eval_points):
     # Same order as FEATHER: r, component, category, evaluation point.
     return [
@@ -727,6 +871,7 @@ def embedding_columns(categories, order, eval_points):
         for category in categories
         for point in range(1, eval_points + 1)
     ]
+
 
 def format_curve_axis(ax, title, ylabel):
     """Apply labels and a zero reference line to a characteristic-function panel."""
@@ -744,7 +889,7 @@ def save_figure(fig, destination, dpi=300):
     plt.close(fig)
 
 
-def save_curves(series, theta, title, destination):
+def save_curves(series, theta, title, destination, statistic="Mean"):
     # Each entry contains a label and its cosine/sine curves.
     fig, axes = plt.subplots(1, 2, figsize=(12, 4), sharey=True)
     for index, (label, values) in enumerate(series.items()):
@@ -756,7 +901,7 @@ def save_curves(series, theta, title, destination):
                 marker="o", markersize=3, label=label,
             )
     for ax, label in zip(axes, ["Real (cosine)", "Imaginary (sine)"]):
-        format_curve_axis(ax, label, "Mean across nodes")
+        format_curve_axis(ax, label, f"{statistic} across nodes")
         ax.set_ylim(-1.05, 1.05)
     axes[0].legend(fontsize=8)
     fig.suptitle(title)
@@ -923,13 +1068,14 @@ def process_city(city, config):
 
     summary_folder = OUTPUT_ROOT / "POI_distances" / place_name
     summary_path = summary_folder / f"{place_name}_poi_distances.csv"
-    write_distance_csv = not summary_path.exists()
 
     map_folder = OUTPUT_ROOT / "graph_POis" / place_name
+
     embedding_folder = OUTPUT_ROOT / "FEATHER_embeddings" / place_name
     embedding_path = (
         embedding_folder / f"{place_name}_feather_embeddings.csv"
     )
+
     curve_folder = curve_root / "FEATHER_curves_mean" / place_name
     high_low_folder = curve_root / "FEATHER_curves_high_low" / place_name
 
@@ -938,6 +1084,7 @@ def process_city(city, config):
     buffered = build_graph_from_pbf(
         place, city["city_pbf_path"], city["city_dir"]
     )
+
     poi_data = extract_pois_from_city_pbf(
         place,
         city["city_pbf_path"],
@@ -945,15 +1092,18 @@ def process_city(city, config):
         city["clip_boundary_path"],
         categories,
     )
+
     municipality = municipality_data(
         buffered, city["exact_boundary_path"]
     )
 
-    # Needed for outlier filtering and high/low distance summaries.
+    # Calculate distances on the original buffered road network.
     print("Calculating walking distances...", flush=True)
+
     distances, poi_counts = calculate_poi_distances(
         buffered, poi_data["features"], categories
     )
+
     distances = distances.reindex(municipality["nodes"].index)
     poi_counts = poi_counts.reindex(municipality["nodes"].index)
 
@@ -961,12 +1111,14 @@ def process_city(city, config):
     distance_summary.index.name = "node_id"
 
     for category in categories:
-        distance_summary[f"{category}_mean_distance_m"] = distances[category]
+        distance_summary[f"{category}_mean_distance_m"] = (
+            distances[category]
+        )
         distance_summary[
             f"{category}_poi_count_up_to_{NEAREST_POIS}"
         ] = poi_counts[category]
 
-    # Sum category distances only.
+    # Give each amenity category equal weight.
     filled = fill_distances(distances[list(categories)])
     distance_summary["total_distance_m"] = filled.sum(axis=1)
     distance_summary["average_distance_m"] = filled.mean(axis=1)
@@ -974,9 +1126,50 @@ def process_city(city, config):
     del filled, poi_counts, buffered, poi_data
     gc.collect()
 
-    # Skip distance-map generation if this city's folder already exists.
+    # Show the distribution and fences before removing nodes.
+    # The figure function handles skipping existing IQR folders.
+    save_iqr_figure(
+        place,
+        distance_summary["average_distance_m"],
+        config["outlier_iqr_multiplier"],
+    )
+
+    # Remove IQR outliers, then any isolated nodes.
+    graph, excluded = remove_distance_outliers(
+        municipality["graph"],
+        distance_summary["average_distance_m"],
+        config["outlier_iqr_multiplier"],
+    )
+
+    # Retain all original nodes in the CSV with current exclusion labels.
+    distance_summary["feather_exclusion"] = excluded
+
+    summary_folder.mkdir(parents=True, exist_ok=True)
+    distance_summary.to_csv(summary_path, index=True)
+    print(f"Saved distance CSV: {summary_path}", flush=True)
+
+    # Restrict both map nodes and edges to the filtered graph.
+    node_ids = list(graph.nodes)
+    edges = municipality["edges"]
+
+    keep_edges = (
+        edges.index.get_level_values("u").isin(node_ids)
+        & edges.index.get_level_values("v").isin(node_ids)
+    )
+
+    municipality = {
+        "graph": graph,
+        "nodes": municipality["nodes"].loc[node_ids].copy(),
+        "edges": edges.loc[keep_edges].copy(),
+    }
+    del edges, keep_edges
+
+    # Keep original-network distances for the retained nodes.
+    distances = distances.loc[node_ids].copy()
+
+    # Generate POI maps after filtering.
     if not map_folder.exists():
-        print("Saving distance maps at 600 DPI...", flush=True)
+        print("Saving filtered distance maps at 600 DPI...", flush=True)
         map_folder.mkdir(parents=True, exist_ok=True)
 
         for category in categories:
@@ -992,7 +1185,7 @@ def process_city(city, config):
             place,
             "all_categories_average",
             municipality,
-            distance_summary["average_distance_m"],
+            distance_summary.loc[node_ids, "average_distance_m"],
             map_folder,
             combined=True,
         )
@@ -1002,27 +1195,6 @@ def process_city(city, config):
             flush=True,
         )
 
-
-    # Keep maps and the distance CSV complete; filter only for FEATHER.
-    graph, excluded = remove_distance_outliers(
-        municipality["graph"],
-        distance_summary["average_distance_m"],
-        config["outlier_bottom_percent"],
-        config["outlier_top_percent"],
-    )
-    distance_summary["feather_exclusion"] = excluded
-
-    if write_distance_csv:
-        summary_folder.mkdir(parents=True, exist_ok=True)
-        distance_summary.to_csv(summary_path, index=True)
-        print(f"Saved distance CSV: {summary_path}", flush=True)
-    else:
-        print(
-            f"Skipping existing distance CSV: {summary_path}",
-            flush=True,
-        )
-
-    distances = distances.loc[list(graph.nodes)].copy()
     del distance_summary, excluded
 
     expected_columns = list(
@@ -1040,6 +1212,7 @@ def process_city(city, config):
         index_column = pd.read_csv(
             embedding_path, nrows=0
         ).columns[0]
+
         table = pd.read_csv(
             embedding_path,
             dtype={index_column: str},
@@ -1047,25 +1220,24 @@ def process_city(city, config):
         )
         table.index = table.index.map(str)
 
-        node_ids = list(graph.nodes)
         expected_index = pd.Index([str(node) for node in node_ids])
 
         if not table.index.is_unique or not table.columns.is_unique:
             raise ValueError(
-                f"Saved embeddings contain duplicate rows or columns: "
+                "Saved embeddings contain duplicate rows or columns: "
                 f"{embedding_path}"
             )
 
         if set(table.columns) != set(expected_columns):
             raise ValueError(
-                f"Saved embedding columns do not match the current "
+                "Saved embedding columns do not match the current "
                 f"categories, order, or evaluation points: {embedding_path}. "
                 "Move or delete this CSV to calculate fresh embeddings."
             )
 
         if set(table.index) != set(expected_index):
             raise ValueError(
-                f"Saved embedding nodes do not match the current "
+                "Saved embedding nodes do not match the current "
                 f"filtered graph: {embedding_path}. "
                 "Move or delete this CSV to calculate fresh embeddings."
             )
@@ -1077,7 +1249,7 @@ def process_city(city, config):
 
         if not np.isfinite(embedding).all():
             raise ValueError(
-                f"Saved embeddings contain missing or non-finite "
+                "Saved embeddings contain missing or non-finite "
                 f"values: {embedding_path}"
             )
 
@@ -1088,6 +1260,7 @@ def process_city(city, config):
             f"Calculating FEATHER embeddings through r = {order}...",
             flush=True,
         )
+
         inputs = prepare_feather_inputs(graph, distances, categories)
         del municipality, graph
 
@@ -1097,6 +1270,7 @@ def process_city(city, config):
             order=order,
         )
         model.fit(graph=inputs["graph"], X=inputs["features"])
+
         embedding = model.get_embedding()
         node_ids = list(inputs["node_ids"])
 
@@ -1108,6 +1282,7 @@ def process_city(city, config):
 
         embedding_folder.mkdir(parents=True, exist_ok=True)
         table.to_csv(embedding_path, index=True)
+
         del table, inputs, model
 
         print(
@@ -1120,6 +1295,30 @@ def process_city(city, config):
         len(embedding), order, 2, len(categories), eval_points
     )
     means = values.mean(axis=0)
+    medians = np.median(values, axis=0)
+    median_folder = (
+        OUTPUT_ROOT / "FEATHER_curves" / "FEATHER_curves_median" / place_name
+    )
+    if not median_folder.exists():
+        print("Saving FEATHER_new median curves...", flush=True)
+        for index, category in enumerate(categories):
+            series = {
+                f"r = {r + 1}": medians[r, :, index, :]
+                for r in range(order)
+            }
+            save_curves(
+                series,
+                theta,
+                f"FEATHER_new — {place} — {category.replace('_', ' ')}",
+                median_folder / f"feather_{category}.png",
+                statistic="Median",
+            )
+    else:
+        print(
+            f"Skipping existing median-curve folder: {median_folder}",
+            flush=True,
+        )
+
     high_low = high_low_summary(
         values,
         distances,
@@ -1129,7 +1328,7 @@ def process_city(city, config):
     )
     del distances
 
-    # Skip all mean-curve plotting if this city's folder exists.
+    # Skip mean-curve plotting if this city's folder already exists.
     if not curve_folder.exists():
         print("Saving one FEATHER figure per amenity...", flush=True)
         curve_folder.mkdir(parents=True, exist_ok=True)
@@ -1152,7 +1351,7 @@ def process_city(city, config):
             flush=True,
         )
 
-    # Skip all high/low plotting if this city's folder exists.
+    # Skip high/low plotting if this city's folder already exists.
     if not high_low_folder.exists():
         print(
             "Saving high/low distance curves with standard-deviation bands...",
@@ -1169,7 +1368,8 @@ def process_city(city, config):
         )
     else:
         print(
-            f"Skipping existing FEATHER high/low-curve folder: {high_low_folder}",
+            "Skipping existing FEATHER high/low-curve folder: "
+            f"{high_low_folder}",
             flush=True,
         )
 
@@ -1190,55 +1390,123 @@ def process_city(city, config):
 
     print(f"Finished {place}.", flush=True)
 
-    return means[-1].copy(), last_groups
+    return means[-1].copy(), last_groups, medians[-1].copy()
+
 
 def run_pipeline():
     global CLIP_BUFFER_M, NEAREST_POIS
+
     config = load_config(CONFIG_PATH)
-    bottom = config["outlier_bottom_percent"]
-    top = config["outlier_top_percent"]
-    if not np.isfinite([bottom, top]).all() or min(bottom, top) < 0 or bottom + top >= 100:
-        raise ValueError("Outlier percentages must be non-negative and sum to less than 100.")
+
+    multiplier = config["outlier_iqr_multiplier"]
+    if not np.isfinite(multiplier) or multiplier <= 0:
+        raise ValueError(
+            "outlier_iqr_multiplier must be finite and positive."
+        )
+
     if not 0 < config["high_low_percent"] <= 50:
-        raise ValueError("high_low_percent must be greater than 0 and at most 50.")
+        raise ValueError(
+            "high_low_percent must be greater than 0 and at most 50."
+        )
+
     CLIP_BUFFER_M = config["CLIP_BUFFER_M"]
     NEAREST_POIS = config["NEAREST_POIS"]
-    if min(CLIP_BUFFER_M, NEAREST_POIS, config["order"], config["eval_points"]) <= 0:
-        raise ValueError("Buffer, POI count, order and evaluation count must be positive.")
+
+    if min(
+        CLIP_BUFFER_M,
+        NEAREST_POIS,
+        config["order"],
+        config["eval_points"],
+    ) <= 0:
+        raise ValueError(
+            "Buffer, POI count, order and evaluation count must be positive."
+        )
+
     if not config["places"] or not config["resolved_categories"]:
-        raise ValueError("Configure at least one place and amenity category.")
+        raise ValueError(
+            "Configure at least one place and amenity category."
+        )
+
     print("\nFEATHER pipeline", flush=True)
-    print("Preparing city files; existing downloads will be reused...", flush=True)
+    print(
+        "Preparing city files; existing downloads will be reused...",
+        flush=True,
+    )
+
     index = get_geofabrik_index()
     plan = build_download_plan(config["places"], index)
+
     # Prepare missing city files before processing cities individually.
     prepare_city_pbfs(plan)
     del index
+
     city_means = {}
     city_groups = {}
+    city_medians = {}
+
     for city in plan.to_dict(orient="records"):
-        city_means[city["place"]], city_groups[city["place"]] = process_city(city, config)
+        (
+            city_means[city["place"]],
+            city_groups[city["place"]],
+            city_medians[city["place"]],
+        ) = process_city(city, config)
         gc.collect()
+
     order = config["order"]
-    theta = np.linspace(0.01, config["theta_max"], config["eval_points"])
+    theta = np.linspace(
+        0.01, config["theta_max"], config["eval_points"]
+    )
+
     folder = OUTPUT_ROOT / "FEATHER_curves" / "FEATHER_curves_mean"
-    print(f"Saving cross-city comparisons for r = {order}...", flush=True)
+    print(
+        f"Saving cross-city comparisons for r = {order}...",
+        flush=True,
+    )
+
     for index, category in enumerate(config["resolved_categories"]):
         series = {
             place: means[:, index, :]
             for place, means in city_means.items()
         }
         save_curves(
-            series, theta,
+            series,
+            theta,
             f"{category.replace('_', ' ')} — city comparison, r = {order}",
             folder / f"feather_{category}.png",
         )
-    high_low_folder = OUTPUT_ROOT / "FEATHER_curves" / "FEATHER_curves_high_low"
-    print(f"Saving high/low cross-city comparisons for r = {order}...", flush=True)
-    save_high_low_comparisons(
-        city_groups, config["resolved_categories"], theta, order,
-        config["high_low_percent"], high_low_folder,
+
+    high_low_folder = (
+        OUTPUT_ROOT / "FEATHER_curves" / "FEATHER_curves_high_low"
     )
+    print(
+        f"Saving high/low cross-city comparisons for r = {order}...",
+        flush=True,
+    )
+
+    save_high_low_comparisons(
+        city_groups,
+        config["resolved_categories"],
+        theta,
+        order,
+        config["high_low_percent"],
+        high_low_folder,
+    )
+
+    median_folder = OUTPUT_ROOT / "FEATHER_curves" / "FEATHER_curves_median"
+    print(f"Saving median cross-city comparisons for r = {order}...", flush=True)
+    for index, category in enumerate(config["resolved_categories"]):
+        series = {
+            place: medians[:, index, :]
+            for place, medians in city_medians.items()
+        }
+        save_curves(
+            series,
+            theta,
+            f"FEATHER_new — {category.replace('_', ' ')} "
+            f"— city comparison, r = {order}",
+            median_folder / f"feather_{category}_city_comparison.png",
+            statistic="Median",
+        )
     print("Pipeline finished.", flush=True)
 
 if __name__ == "__main__":
