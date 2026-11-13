@@ -14,6 +14,7 @@ geo_test_edit_pipeline = "python -m marimo edit input/geo/geo_test_edit_pipeline
 geo_test_run_pipeline = "python -m marimo run input/geo/geo_test_edit_pipeline.py"
 geo_edit_feathercomp = "python -m marimo edit input/geo/feather_comparison.py"
 geo_run_feathercomp = "python -m marimo run input/geo/feather_comparison.py"
+minitest = "python -m marimo run input/geo/mini_feather_test.py"
 
 
 [dependencies]
