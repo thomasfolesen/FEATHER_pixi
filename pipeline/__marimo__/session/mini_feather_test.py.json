@@ -1,0 +1,258 @@
+{
+  "version": "1",
+  "metadata": {
+    "marimo_version": "0.24.0",
+    "script_metadata_hash": null
+  },
+  "cells": [
+    {
+      "id": "Hbol",
+      "code_hash": "c1727b08f143cd1d4edc55fac162d52e",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h1 id=\"feather-vs-feather_new-tiny-synthetic-ae-graph-by-hand-math-check\">FEATHER vs FEATHER_new \u2014 tiny synthetic A\u2013E graph, by-hand math check</h1>\n<span class=\"paragraph\">No OSM / Overpass, no cached city graph, no amenity lookup \u2014 just a\nhand-built 5-node graph so every matrix and embedding value can be\nchecked against pen-and-paper math.</span>\n<span class=\"paragraph\"><strong>Graph (edge: length):</strong></span>\n<ul>\n<li>A-B: 1</li>\n<li>B-E: 3</li>\n<li>E-D: 3</li>\n<li>A-C: 2</li>\n<li>C-D: 1</li>\n<li>A-D: 5</li>\n</ul>\n<span class=\"paragraph\"><code>D</code> is treated as the \"amenity\" / destination node.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "MJUe",
+      "code_hash": "50ec38b3f7eb015b043598b6f6f5179d",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "vblA",
+      "code_hash": "3c36c515b0d509e5a48c567a6bc57862",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"build-the-synthetic-graph\">Build the synthetic graph</h2>\n<span class=\"paragraph\">Nodes are relabeled <code>0..n-1</code> (FEATHER / FEATHER_new both expect\n<code>nx.adjacency_matrix(graph, nodelist=range(n))</code>), but every table\nbelow is shown with the original A\u2013E letters as row/column labels\nso it stays easy to read.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "bkHC",
+      "code_hash": "c5ba61bfee53db6e8c2435a88a24dc5c",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "lEQa",
+      "code_hash": "f16c331ce7d74570fc1659f6c6cb0399",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "PKri",
+      "code_hash": "d9c2527673185f730432c0cf0f452227",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"feature-vector-x\">Feature vector X</h2>\n<span class=\"paragraph\"><code>D</code> is the amenity / end node \u2014 a natural, easy-to-hand-check feature\nis each node's shortest-path distance to <code>D</code> (weighted by <code>length</code>).\nSwap this out for whatever feature you're actually verifying.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "Xref",
+      "code_hash": "9c16cfe3ba984f7e481713ffa5f2d17b",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "SFPL",
+      "code_hash": "b9b4064f5a6277763a25c1cbbd77baf5",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "BYtC",
+      "code_hash": "323e7cfec2e57a01831533414b87821a",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"parameters\">Parameters</h2></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "RGSE",
+      "code_hash": "273bf40fe88d8563fb8254b18477b959",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "Kclp",
+      "code_hash": "4b8bf10e60e4505bac5fe9f7f86d5d68",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "emfo",
+      "code_hash": "2190e40f125b7e984e79cba4c0e1a0b3",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"feather-unweighted-every-edge-counts-equally-length-ignored\">FEATHER (unweighted \u2014 every edge counts equally, length ignored)</h2></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "Hstk",
+      "code_hash": "b55d2628111c34794f45394b7261217b",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "nWHF",
+      "code_hash": "80a42f28f889669fd49b894141a6bd31",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "iLit",
+      "code_hash": "c33b19e1945c12e1e28ec6b3fd8b65db",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "ZHCJ",
+      "code_hash": "5886d203ae5e62c76b967277145d3fab",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"feather_new-weighted-w-1length\">FEATHER_new (weighted, w = 1/length)</h2>\n<span class=\"paragraph\"><strong>A quirk worth knowing about:</strong> <code>FEATHER_new._create_D_inverse</code> reads\nthe edge attribute literally named <code>\"weight\"</code>. Our graph only carries\n<code>\"length\"</code>, so calling <code>_create_D_inverse(graph)</code> directly on the raw\ngraph silently falls back to unweighted degree (every edge counts as\n1) instead of summing <code>1/length</code>. <code>_create_A_tilde</code> avoids this\ninternally by building a local copy with <code>weight = 1/length</code> set\n<em>before</em> calling <code>_create_D_inverse</code> on it \u2014 so <code>A_tilde_w</code> itself is\ncorrect, but a standalone <code>D_inverse_w</code> printed from the raw graph\nwould <strong>not</strong> match it. To show the <code>D_inverse_w</code> that is actually\nconsistent with <code>A_tilde_w</code> (and with hand math), we replicate that\nsame <code>weight = 1/length</code> assignment below before calling\n<code>_create_D_inverse</code>.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "ROlb",
+      "code_hash": "0d6a503c2147137bf2b456685e738a8a",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "qnkX",
+      "code_hash": "97e88db39cac2c1eba027c380823a4ac",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "TqIu",
+      "code_hash": "9adfa0cfb6174d957a6b14d6b55e5cef",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "Vxnm",
+      "code_hash": "2545d7f65b73903e647443f4b4a3e29d",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"visualizing-feather_new-across-theta\">Visualizing FEATHER_new across theta</h2>\n<span class=\"paragraph\">This reproduces the chart your partner built in Excel: x-axis is the\ncharacteristic function evaluation point (theta), y-axis is the\nembedding value at that point. Each node gets its own curve set \u2014 one\nline per (scale, real/imaginary) combination \u2014 plus one more chart\nfor the unweighted average across all five nodes.</span>\n<span class=\"paragraph\">Blue = real part, orange = imaginary part. Line style marks the\nrandom-walk scale: solid = scale 1, dashed = scale 2, dotted = scale\n3, and so on if you push <code>order</code> higher with the sliders above.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "DnEU",
+      "code_hash": "cbe9d9ce613d77af0c2610467fdbdece",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "ulZA",
+      "code_hash": "f9c11fc0f0f49af97197f006beb5377e",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "ecfG",
+      "code_hash": "480cb96b5e1c4fc621a3ab39fdb1d8e9",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "Pvdt",
+      "code_hash": "fa0ad1365a988f891ff0768d46b07334",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "ZBYS",
+      "code_hash": "9c4240ac691fa18fb9106db41b998eb7",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"average-chart-styled-after-figure-1-of-the-feather-paper\">Average chart, styled after Figure 1 of the FEATHER paper</h2>\n<span class=\"paragraph\">This redoes just the \"Average across nodes\" chart to look like the\npaper's Figure 1 \u2014 \"the real part of ... mean characteristic\nfunctions with standard deviations around the mean\": one line per\nscale (the real-part mean across the 5 nodes) with a shaded \u00b1 1\nstandard deviation band around it, boxed axes, dashed gridlines, and\na bordered legend underneath the plot. The per-node panels above keep\ntheir original look \u2014 only this chart is restyled.</span>\n<span class=\"paragraph\">The curve itself is <strong>not</strong> just the 5 stored evaluation points\njoined by straight lines. <code>\u03b8</code> is a continuous real-valued input to\ncos/sin, so the characteristic function is a genuine smooth wave \u2014\nwe re-evaluate the same scale-r random-walk weighted formula\n(<code>A_tilde^r \u00b7 cos(x \u2297 \u03b8)</code>) at hundreds of closely spaced \u03b8 values to\ndraw the actual curve, then mark the handful of \u03b8 values that are\nactually stored in the embedding / Excel file as dots sitting right\non top of it.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "aLJB",
+      "code_hash": "b71e9c6941e4f961968a852362fde3c2",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "nHfw",
+      "code_hash": "748d1b8f9c5ae07624a2f00439f5d732",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "xXTn",
+      "code_hash": "1c4b3a5dc41c32ef50c243ac199eb4c1",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "AjVT",
+      "code_hash": "bae11c1cfb1837aeaa37a29153e10380",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "pHFh",
+      "code_hash": "0e644a2ec6cdc8f18b0871e961ed23c7",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"difference-feather_new-feather\">Difference (FEATHER_new \u2212 FEATHER)</h2></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "NCOB",
+      "code_hash": "878d5b454e933fa7efb28d2bf26fa123",
+      "outputs": [],
+      "console": []
+    }
+  ]
+}

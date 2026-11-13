@@ -1,0 +1,28 @@
+# list of places to download from Geofabrik
+# too big places = [[Paris, France]]
+place = [[Paris, France], [Copenhagen Municipality, Denmark], [Barcelona, Catalonia, Spain], [Amsterdam, North Holland, Netherlands], [Polla, Salerno, Campania, Italy], [Milton Keynes, England, United Kingdom], [Swindon, England, United Kingdom], [Oulu, Finland]]
+#float on the x-asis what should the max value be?
+theta_max = 45
+#int how many points to look at
+eval_points = 40
+#int. known as r from article
+order = 7
+#int sets max distance to amenity and also geo downloaded and used around graph for place
+CLIP_BUFFER_M = 2000
+#int how many POI's and their mean shall be used for the feature value of the vertice
+NEAREST_POIS = 10
+# float IQR fence multiplier -  larger values removes fewer vertices
+outlier_iqr_multiplier = 1.5
+#float. for the sin + cos curves looking at top and bot nodes what is the cutoff for these?
+high_low_percent = 1
+#list of places based on OSM taxonomy
+outdoor_activities = [[leisure=park], [leisure=playground], [leisure=bathing_place], [leisure=garden], [leisure=pitch], [leisure=stadium], [leisure=swimming_area], [leisure=track], [tourism=picnic_site]]
+learning = [[amenity=college], [amenity=school], [amenity=library], [amenity=kindergarten], [amenity=university], [amenity=training]]
+supplies = [[shop=department_store], [shop=general], [shop=mall], [shop=supermarket], [shop=convenience], [shop=bakery], [shop=butcher], [shop=greengrocer], [shop=books], [shop=stationery], [shop=clothes], [shop=shoes], [shop=appliance], [shop=doityourself], [shop=furniture], [shop=electronics], [shop=houseware]]
+eating = [[amenity=pub], [amenity=cafe], [amenity=restaurant], [amenity=fast_food], [amenity=food_court], [amenity=biergarten]]
+moving = [[public_transport=platform], [public_transport=station], [public_transport=stop_position]]
+cultural_activities = [[amenity=cinema], [amenity=community_centre], [amenity=theatre], [tourism=aquarium], [tourism=gallery], [tourism=museum], [tourism=zoo]]
+physical_exercise = [[leisure=fitness_centre], [leisure=fitness_station], [leisure=sports_centre], [leisure=swimming_pool]]
+services = [[amenity=fire_station], [amenity=police], [amenity=post_office], [post_office=post_partner], [amenity=post_box], [amenity=townhall], [amenity=toilets]]
+healthcare = [[amenity=clinic], [amenity=dentist], [amenity=doctors], [amenity=hospital], [amenity=pharmacy], [amenity=veterinary]]
+financial = [[amenity=atm], [amenity=bank], [amenity=payment_terminal], [amenity=payment_centre]]

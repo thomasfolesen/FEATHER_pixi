@@ -1,0 +1,204 @@
+{
+  "version": "1",
+  "metadata": {
+    "marimo_version": "0.24.0",
+    "script_metadata_hash": null
+  },
+  "cells": [
+    {
+      "id": "Hbol",
+      "code_hash": "14ece1b362cc7f8f25aa15c41c7bfe59",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h1 id=\"pipeline\">Pipeline</h1></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "MJUe",
+      "code_hash": "e263388c442ae719098a3f4e69bb0c02",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"import-libraries\">Import libraries</h2></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "vblA",
+      "code_hash": "87b98ff249751792eaf937e4e761c1f8",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "bkHC",
+      "code_hash": "6a5ac4adf794acc94f8bc4a83dc398fb",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"load-config-file\">Load config file</h2></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "lEQa",
+      "code_hash": "13a842135a63e862aa12f554b4e577d4",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/html": "<marimo-ui-element object-id='lEQa-0' random-id='c7fde4c4-9f02-b63f-3913-581a2d2d7c5e'><marimo-table data-initial-value='[]' data-label='null' data-data='&quot;[{&#92;&quot;place&#92;&quot;:&#92;&quot;Copenhagen Municipality, Denmark&#92;&quot;,&#92;&quot;country&#92;&quot;:&#92;&quot;Denmark&#92;&quot;,&#92;&quot;theta_max&#92;&quot;:2.5,&#92;&quot;eval_points&#92;&quot;:25,&#92;&quot;order&#92;&quot;:5,&#92;&quot;accessibility_categories&#92;&quot;:{&#92;&quot;outdoor_activities&#92;&quot;:[&#92;&quot;leisure=park&#92;&quot;],&#92;&quot;learning&#92;&quot;:[&#92;&quot;university&#92;&quot;],&#92;&quot;supplies&#92;&quot;:[&#92;&quot;shop=department_store&#92;&quot;],&#92;&quot;eating&#92;&quot;:[&#92;&quot;restaurant&#92;&quot;],&#92;&quot;moving&#92;&quot;:[&#92;&quot;public_transport=station&#92;&quot;],&#92;&quot;cultural_activities&#92;&quot;:[&#92;&quot;amenity=cinema&#92;&quot;],&#92;&quot;physical_exercise&#92;&quot;:[&#92;&quot;leisure=fitness_centre&#92;&quot;],&#92;&quot;services&#92;&quot;:[&#92;&quot;fire_station&#92;&quot;],&#92;&quot;healthcare&#92;&quot;:[&#92;&quot;dentist&#92;&quot;],&#92;&quot;financial&#92;&quot;:[&#92;&quot;atm&#92;&quot;]}},{&#92;&quot;place&#92;&quot;:&#92;&quot;Polla, Salerno, Campania, Italy&#92;&quot;,&#92;&quot;country&#92;&quot;:&#92;&quot;Italy&#92;&quot;,&#92;&quot;theta_max&#92;&quot;:2.5,&#92;&quot;eval_points&#92;&quot;:25,&#92;&quot;order&#92;&quot;:5,&#92;&quot;accessibility_categories&#92;&quot;:{&#92;&quot;outdoor_activities&#92;&quot;:[&#92;&quot;leisure=park&#92;&quot;],&#92;&quot;learning&#92;&quot;:[&#92;&quot;university&#92;&quot;],&#92;&quot;supplies&#92;&quot;:[&#92;&quot;shop=department_store&#92;&quot;],&#92;&quot;eating&#92;&quot;:[&#92;&quot;restaurant&#92;&quot;],&#92;&quot;moving&#92;&quot;:[&#92;&quot;public_transport=station&#92;&quot;],&#92;&quot;cultural_activities&#92;&quot;:[&#92;&quot;amenity=cinema&#92;&quot;],&#92;&quot;physical_exercise&#92;&quot;:[&#92;&quot;leisure=fitness_centre&#92;&quot;],&#92;&quot;services&#92;&quot;:[&#92;&quot;fire_station&#92;&quot;],&#92;&quot;healthcare&#92;&quot;:[&#92;&quot;dentist&#92;&quot;],&#92;&quot;financial&#92;&quot;:[&#92;&quot;atm&#92;&quot;]}}]&quot;' data-total-rows='2' data-total-columns='6' data-max-columns='50' data-banner-text='&quot;&quot;' data-pagination='false' data-page-size='10' data-field-types='[[&quot;place&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;country&quot;,[&quot;string&quot;,&quot;object&quot;]],[&quot;theta_max&quot;,[&quot;number&quot;,&quot;float64&quot;]],[&quot;eval_points&quot;,[&quot;integer&quot;,&quot;int64&quot;]],[&quot;order&quot;,[&quot;integer&quot;,&quot;int64&quot;]],[&quot;accessibility_categories&quot;,[&quot;string&quot;,&quot;object&quot;]]]' data-show-filters='true' data-show-download='true' data-show-search='true' data-show-column-summaries='false' data-show-data-types='true' data-show-page-size-selector='false' data-show-column-explorer='true' data-show-chart-builder='true' data-row-headers='[]' data-hidden-columns='[]' data-has-stable-row-id='false' data-lazy='false' data-preload='false'></marimo-table></marimo-ui-element>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "PKri",
+      "code_hash": "e889f3ec6453333fcb09b020e28d33ba",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h1 id=\"load-osmnx-graph\">Load OSMNX graph</h1></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "Xref",
+      "code_hash": "a2fb35437d88634e1f41699f0c5b10bc",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "SFPL",
+      "code_hash": "4c02f64b22fddf3c07b423ec44c257ce",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h3 id=\"get-graph-for-place-function\">Get graph for place function</h3></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "BYtC",
+      "code_hash": "e90895b51038ca41bfc78b7cff65aefc",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "RGSE",
+      "code_hash": "cdf17403e27a6012f611441767152acb",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "Kclp",
+      "code_hash": "343b54fa4e5013c3b3b4569bede547bf",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "This cell was interrupted and needs to be re-run",
+          "traceback": null
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\n============================================================\nProcessing graph for Copenhagen Municipality, Denmark\n============================================================\nFinding boundary for Copenhagen Municipality, Denmark ...\n2026-10-19 17:11:45 Pausing 1 second(s) before making HTTP GET request to 'nominatim.openstreetmap.org'\n2026-10-19 17:11:46 Get https://nominatim.openstreetmap.org/search?format=json&polygon_geojson=1&dedupe=0&limit=50&q=Copenhagen+Municipality%2C+Denmark with timeout=180\n2026-10-19 17:11:46 Downloaded 195.4kB from 'nominatim.openstreetmap.org' with status 200\n2026-10-19 17:11:46 Saved response to cache file '../cache/copenhagen_municipality_denmark/56e981885d4f7432c4e4f0a57b192a8da9cd4cbc.json'\n2026-10-19 17:11:46 Created GeoDataFrame with 1 rows from 1 queries\n\nDownloading graph for Copenhagen Municipality, Denmark ...\nBoundary tolerance: 100 m\nAttempt 1\n2026-10-19 17:11:46 Projected GeoDataFrame to 'EPSG:32633 / WGS 84 / UTM zone 33N'\n2026-10-19 17:11:46 Projected GeoDataFrame to 'EPSG:4326 / WGS 84'\n2026-10-19 17:11:46 Projected GeoDataFrame to 'EPSG:32633 / WGS 84 / UTM zone 33N'\n2026-10-19 17:11:46 Projected GeoDataFrame to 'EPSG:4326 / WGS 84'\n2026-10-19 17:11:46 Requesting data from API in 1 request(s)\n2026-10-19 17:11:46 Resolved 'overpass-api.de' to '162.55.144.139'\n2026-10-19 17:11:46 Unable to reach https://overpass-api.de/api/status, HTTPSConnectionPool(host='overpass-api.de', port=443): Max retries exceeded with url: /api/status (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f02a47098d0>: Failed to establish a new connection: [Errno 111] Connection refused'))\n2026-10-19 17:11:46 Pausing 60 second(s) before making HTTP POST request to 'overpass-api.de'\n2026-10-19 17:12:46 Post https://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%5Btimeout%3A180%5D%3B%28way%5B%22highway%22%5D%5B%22area%22%21~%22yes%22%5D%5B%22access%22%21~%22private%22%5D%5B%22highway%22%21~%22abandoned%7Cbus_guideway%7Cconstruction%7Ccycleway%7Cmotor%7Cno%7Cplanned%7Cplatform%7Cproposed%7Craceway%7Crazed%7Crest_area%7Cservices%22%5D%5B%22foot%22%21~%22no%22%5D%5B%22service%22%21~%22private%22%5D%5B%22sidewalk%22%21~%22separate%22%5D%5B%22sidewalk%3Aboth%22%21~%22separate%22%5D%5B%22sidewalk%3Aleft%22%21~%22separate%22%5D%5B%22sidewalk%3Aright%22%21~%22separate%22%5D%28poly%3A%2755.608386+12.516373+55.608370+12.508948+55.608387+12.508194+55.608445+12.507445+55.608542+12.506710+55.608679+12.505995+55.608854+12.505305+55.609822+12.501925+55.610040+12.501250+55.610293+12.500615+55.610581+12.500028+55.610900+12.499493+55.611247+12.499016+55.611619+12.498600+55.612012+12.498252+55.612422+12.497972+55.654852+12.470967+55.655260+12.470720+55.704051+12.448027+55.711253+12.445227+55.711695+12.445096+55.712142+12.445043+55.712590+12.445070+55.713034+12.445175+55.713470+12.445359+55.713894+12.445618+55.714301+12.445951+55.714687+12.446355+55.719377+12.452096+55.719745+12.452599+55.720081+12.453166+55.720382+12.453792+55.720646+12.454470+55.728599+12.480173+55.728805+12.480841+55.728974+12.481541+55.729105+12.482267+55.729195+12.483011+55.737143+12.564497+55.737193+12.565262+55.737201+12.566032+55.737167+12.566799+55.737091+12.567558+55.725839+12.668730+55.725724+12.669467+55.725568+12.670180+55.708209+12.734874+55.707987+12.735592+55.707002+12.738419+55.706749+12.739071+55.706461+12.739676+55.706139+12.740227+55.705789+12.740718+55.705413+12.741145+55.705014+12.741504+55.704598+12.741791+55.704167+12.742004+55.703727+12.742139+55.703281+12.742196+55.702834+12.742175+55.702391+12.742075+55.701955+12.741897+55.701532+12.741644+55.701124+12.741317+55.700738+12.740920+55.700375+12.740457+55.699869+12.739742+55.643222+12.653589+55.642903+12.653002+55.642620+12.652359+55.619330+12.596807+55.619073+12.596166+55.612162+12.576954+55.611957+12.576323+55.611786+12.575662+55.611650+12.574975+55.611549+12.574270+55.611486+12.573551+55.608427+12.517193+55.608386+12.516373%27%29%3B%3E%3B%29%3Bout%3B with timeout=180\n2026-10-19 17:12:46 Resolved 'overpass-api.de' to '162.55.144.139'\n\nGraph download attempt 1 failed for Copenhagen Municipality, Denmark\nHTTPSConnectionPool(host='overpass-api.de', port=443): Max retries exceeded with url: /api/interpreter (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f02a470bb50>: Failed to establish a new connection: [Errno 111] Connection refused'))\nWaiting 120 seconds before retrying...\n\nDownloading graph for Copenhagen Municipality, Denmark ...\nBoundary tolerance: 100 m\nAttempt 2\n2026-10-19 17:14:46 Projected GeoDataFrame to 'EPSG:32633 / WGS 84 / UTM zone 33N'\n2026-10-19 17:14:46 Projected GeoDataFrame to 'EPSG:4326 / WGS 84'\n2026-10-19 17:14:46 Projected GeoDataFrame to 'EPSG:32633 / WGS 84 / UTM zone 33N'\n2026-10-19 17:14:46 Projected GeoDataFrame to 'EPSG:4326 / WGS 84'\n2026-10-19 17:14:46 Requesting data from API in 1 request(s)\n2026-10-19 17:14:46 Resolved 'overpass-api.de' to '162.55.144.139'\n2026-10-19 17:14:46 Unable to reach https://overpass-api.de/api/status, HTTPSConnectionPool(host='overpass-api.de', port=443): Max retries exceeded with url: /api/status (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f02a470ace0>: Failed to establish a new connection: [Errno 111] Connection refused'))\n2026-10-19 17:14:46 Pausing 60 second(s) before making HTTP POST request to 'overpass-api.de'\n2026-10-19 17:15:47 Post https://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%5Btimeout%3A180%5D%3B%28way%5B%22highway%22%5D%5B%22area%22%21~%22yes%22%5D%5B%22access%22%21~%22private%22%5D%5B%22highway%22%21~%22abandoned%7Cbus_guideway%7Cconstruction%7Ccycleway%7Cmotor%7Cno%7Cplanned%7Cplatform%7Cproposed%7Craceway%7Crazed%7Crest_area%7Cservices%22%5D%5B%22foot%22%21~%22no%22%5D%5B%22service%22%21~%22private%22%5D%5B%22sidewalk%22%21~%22separate%22%5D%5B%22sidewalk%3Aboth%22%21~%22separate%22%5D%5B%22sidewalk%3Aleft%22%21~%22separate%22%5D%5B%22sidewalk%3Aright%22%21~%22separate%22%5D%28poly%3A%2755.608386+12.516373+55.608370+12.508948+55.608387+12.508194+55.608445+12.507445+55.608542+12.506710+55.608679+12.505995+55.608854+12.505305+55.609822+12.501925+55.610040+12.501250+55.610293+12.500615+55.610581+12.500028+55.610900+12.499493+55.611247+12.499016+55.611619+12.498600+55.612012+12.498252+55.612422+12.497972+55.654852+12.470967+55.655260+12.470720+55.704051+12.448027+55.711253+12.445227+55.711695+12.445096+55.712142+12.445043+55.712590+12.445070+55.713034+12.445175+55.713470+12.445359+55.713894+12.445618+55.714301+12.445951+55.714687+12.446355+55.719377+12.452096+55.719745+12.452599+55.720081+12.453166+55.720382+12.453792+55.720646+12.454470+55.728599+12.480173+55.728805+12.480841+55.728974+12.481541+55.729105+12.482267+55.729195+12.483011+55.737143+12.564497+55.737193+12.565262+55.737201+12.566032+55.737167+12.566799+55.737091+12.567558+55.725839+12.668730+55.725724+12.669467+55.725568+12.670180+55.708209+12.734874+55.707987+12.735592+55.707002+12.738419+55.706749+12.739071+55.706461+12.739676+55.706139+12.740227+55.705789+12.740718+55.705413+12.741145+55.705014+12.741504+55.704598+12.741791+55.704167+12.742004+55.703727+12.742139+55.703281+12.742196+55.702834+12.742175+55.702391+12.742075+55.701955+12.741897+55.701532+12.741644+55.701124+12.741317+55.700738+12.740920+55.700375+12.740457+55.699869+12.739742+55.643222+12.653589+55.642903+12.653002+55.642620+12.652359+55.619330+12.596807+55.619073+12.596166+55.612162+12.576954+55.611957+12.576323+55.611786+12.575662+55.611650+12.574975+55.611549+12.574270+55.611486+12.573551+55.608427+12.517193+55.608386+12.516373%27%29%3B%3E%3B%29%3Bout%3B with timeout=180\n2026-10-19 17:15:47 Resolved 'overpass-api.de' to '162.55.144.139'\n\nGraph download attempt 2 failed for Copenhagen Municipality, Denmark\nHTTPSConnectionPool(host='overpass-api.de', port=443): Max retries exceeded with url: /api/interpreter (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f02a4709720>: Failed to establish a new connection: [Errno 111] Connection refused'))\nWaiting 240 seconds before retrying...\n\nDownloading graph for Copenhagen Municipality, Denmark ...\nBoundary tolerance: 100 m\nAttempt 3\n2026-10-19 17:19:47 Projected GeoDataFrame to 'EPSG:32633 / WGS 84 / UTM zone 33N'\n2026-10-19 17:19:47 Projected GeoDataFrame to 'EPSG:4326 / WGS 84'\n2026-10-19 17:19:47 Projected GeoDataFrame to 'EPSG:32633 / WGS 84 / UTM zone 33N'\n2026-10-19 17:19:47 Projected GeoDataFrame to 'EPSG:4326 / WGS 84'\n2026-10-19 17:19:47 Requesting data from API in 1 request(s)\n2026-10-19 17:19:47 Resolved 'overpass-api.de' to '65.109.112.52'\n2026-10-19 17:19:47 Unable to reach https://overpass-api.de/api/status, HTTPSConnectionPool(host='overpass-api.de', port=443): Max retries exceeded with url: /api/status (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f02a470b4f0>: Failed to establish a new connection: [Errno 111] Connection refused'))\n2026-10-19 17:19:47 Pausing 60 second(s) before making HTTP POST request to 'overpass-api.de'\n2026-10-19 17:20:47 Post https://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%5Btimeout%3A180%5D%3B%28way%5B%22highway%22%5D%5B%22area%22%21~%22yes%22%5D%5B%22access%22%21~%22private%22%5D%5B%22highway%22%21~%22abandoned%7Cbus_guideway%7Cconstruction%7Ccycleway%7Cmotor%7Cno%7Cplanned%7Cplatform%7Cproposed%7Craceway%7Crazed%7Crest_area%7Cservices%22%5D%5B%22foot%22%21~%22no%22%5D%5B%22service%22%21~%22private%22%5D%5B%22sidewalk%22%21~%22separate%22%5D%5B%22sidewalk%3Aboth%22%21~%22separate%22%5D%5B%22sidewalk%3Aleft%22%21~%22separate%22%5D%5B%22sidewalk%3Aright%22%21~%22separate%22%5D%28poly%3A%2755.608386+12.516373+55.608370+12.508948+55.608387+12.508194+55.608445+12.507445+55.608542+12.506710+55.608679+12.505995+55.608854+12.505305+55.609822+12.501925+55.610040+12.501250+55.610293+12.500615+55.610581+12.500028+55.610900+12.499493+55.611247+12.499016+55.611619+12.498600+55.612012+12.498252+55.612422+12.497972+55.654852+12.470967+55.655260+12.470720+55.704051+12.448027+55.711253+12.445227+55.711695+12.445096+55.712142+12.445043+55.712590+12.445070+55.713034+12.445175+55.713470+12.445359+55.713894+12.445618+55.714301+12.445951+55.714687+12.446355+55.719377+12.452096+55.719745+12.452599+55.720081+12.453166+55.720382+12.453792+55.720646+12.454470+55.728599+12.480173+55.728805+12.480841+55.728974+12.481541+55.729105+12.482267+55.729195+12.483011+55.737143+12.564497+55.737193+12.565262+55.737201+12.566032+55.737167+12.566799+55.737091+12.567558+55.725839+12.668730+55.725724+12.669467+55.725568+12.670180+55.708209+12.734874+55.707987+12.735592+55.707002+12.738419+55.706749+12.739071+55.706461+12.739676+55.706139+12.740227+55.705789+12.740718+55.705413+12.741145+55.705014+12.741504+55.704598+12.741791+55.704167+12.742004+55.703727+12.742139+55.703281+12.742196+55.702834+12.742175+55.702391+12.742075+55.701955+12.741897+55.701532+12.741644+55.701124+12.741317+55.700738+12.740920+55.700375+12.740457+55.699869+12.739742+55.643222+12.653589+55.642903+12.653002+55.642620+12.652359+55.619330+12.596807+55.619073+12.596166+55.612162+12.576954+55.611957+12.576323+55.611786+12.575662+55.611650+12.574975+55.611549+12.574270+55.611486+12.573551+55.608427+12.517193+55.608386+12.516373%27%29%3B%3E%3B%29%3Bout%3B with timeout=180\n2026-10-19 17:20:47 Resolved 'overpass-api.de' to '65.109.112.52'\n\nGraph download attempt 3 failed for Copenhagen Municipality, Denmark\nHTTPSConnectionPool(host='overpass-api.de', port=443): Max retries exceeded with url: /api/interpreter (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f02a4708040>: Failed to establish a new connection: [Errno 111] Connection refused'))\nWaiting 480 seconds before retrying...\n\nDownloading graph for Copenhagen Municipality, Denmark ...\nBoundary tolerance: 100 m\nAttempt 4\n2026-10-19 17:28:47 Projected GeoDataFrame to 'EPSG:32633 / WGS 84 / UTM zone 33N'\n2026-10-19 17:28:47 Projected GeoDataFrame to 'EPSG:4326 / WGS 84'\n2026-10-19 17:28:47 Projected GeoDataFrame to 'EPSG:32633 / WGS 84 / UTM zone 33N'\n2026-10-19 17:28:47 Projected GeoDataFrame to 'EPSG:4326 / WGS 84'\n2026-10-19 17:28:47 Requesting data from API in 1 request(s)\n2026-10-19 17:28:47 Resolved 'overpass-api.de' to '162.55.144.139'\n2026-10-19 17:28:47 Unable to reach https://overpass-api.de/api/status, HTTPSConnectionPool(host='overpass-api.de', port=443): Max retries exceeded with url: /api/status (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f02a470a380>: Failed to establish a new connection: [Errno 111] Connection refused'))\n2026-10-19 17:28:47 Pausing 60 second(s) before making HTTP POST request to 'overpass-api.de'\n2026-10-19 17:29:47 Post https://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%5Btimeout%3A180%5D%3B%28way%5B%22highway%22%5D%5B%22area%22%21~%22yes%22%5D%5B%22access%22%21~%22private%22%5D%5B%22highway%22%21~%22abandoned%7Cbus_guideway%7Cconstruction%7Ccycleway%7Cmotor%7Cno%7Cplanned%7Cplatform%7Cproposed%7Craceway%7Crazed%7Crest_area%7Cservices%22%5D%5B%22foot%22%21~%22no%22%5D%5B%22service%22%21~%22private%22%5D%5B%22sidewalk%22%21~%22separate%22%5D%5B%22sidewalk%3Aboth%22%21~%22separate%22%5D%5B%22sidewalk%3Aleft%22%21~%22separate%22%5D%5B%22sidewalk%3Aright%22%21~%22separate%22%5D%28poly%3A%2755.608386+12.516373+55.608370+12.508948+55.608387+12.508194+55.608445+12.507445+55.608542+12.506710+55.608679+12.505995+55.608854+12.505305+55.609822+12.501925+55.610040+12.501250+55.610293+12.500615+55.610581+12.500028+55.610900+12.499493+55.611247+12.499016+55.611619+12.498600+55.612012+12.498252+55.612422+12.497972+55.654852+12.470967+55.655260+12.470720+55.704051+12.448027+55.711253+12.445227+55.711695+12.445096+55.712142+12.445043+55.712590+12.445070+55.713034+12.445175+55.713470+12.445359+55.713894+12.445618+55.714301+12.445951+55.714687+12.446355+55.719377+12.452096+55.719745+12.452599+55.720081+12.453166+55.720382+12.453792+55.720646+12.454470+55.728599+12.480173+55.728805+12.480841+55.728974+12.481541+55.729105+12.482267+55.729195+12.483011+55.737143+12.564497+55.737193+12.565262+55.737201+12.566032+55.737167+12.566799+55.737091+12.567558+55.725839+12.668730+55.725724+12.669467+55.725568+12.670180+55.708209+12.734874+55.707987+12.735592+55.707002+12.738419+55.706749+12.739071+55.706461+12.739676+55.706139+12.740227+55.705789+12.740718+55.705413+12.741145+55.705014+12.741504+55.704598+12.741791+55.704167+12.742004+55.703727+12.742139+55.703281+12.742196+55.702834+12.742175+55.702391+12.742075+55.701955+12.741897+55.701532+12.741644+55.701124+12.741317+55.700738+12.740920+55.700375+12.740457+55.699869+12.739742+55.643222+12.653589+55.642903+12.653002+55.642620+12.652359+55.619330+12.596807+55.619073+12.596166+55.612162+12.576954+55.611957+12.576323+55.611786+12.575662+55.611650+12.574975+55.611549+12.574270+55.611486+12.573551+55.608427+12.517193+55.608386+12.516373%27%29%3B%3E%3B%29%3Bout%3B with timeout=180\n2026-10-19 17:29:47 Resolved 'overpass-api.de' to '162.55.144.139'\n\nGraph download attempt 4 failed for Copenhagen Municipality, Denmark\nHTTPSConnectionPool(host='overpass-api.de', port=443): Max retries exceeded with url: /api/interpreter (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f02a47092d0>: Failed to establish a new connection: [Errno 111] Connection refused'))\nWaiting 960 seconds before retrying...\n",
+          "mimetype": "text/plain"
+        },
+        {
+          "type": "stream",
+          "name": "stderr",
+          "text": "<span class=\"codehilite\"><div class=\"highlight\"><pre><span></span><span class=\"gt\">Traceback (most recent call last):</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/urllib3/connection.py\"</span>, line <span class=\"m\">198</span>, in <span class=\"n\">_new_conn</span>\n<span class=\"w\">    </span><span class=\"n\">sock</span> <span class=\"o\">=</span> <span class=\"n\">connection</span><span class=\"o\">.</span><span class=\"n\">create_connection</span><span class=\"p\">(</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/urllib3/util/connection.py\"</span>, line <span class=\"m\">85</span>, in <span class=\"n\">create_connection</span>\n<span class=\"w\">    </span><span class=\"k\">raise</span> <span class=\"n\">err</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/urllib3/util/connection.py\"</span>, line <span class=\"m\">73</span>, in <span class=\"n\">create_connection</span>\n<span class=\"w\">    </span><span class=\"n\">sock</span><span class=\"o\">.</span><span class=\"n\">connect</span><span class=\"p\">(</span><span class=\"n\">sa</span><span class=\"p\">)</span>\n<span class=\"gr\">ConnectionRefusedError</span>: <span class=\"n\">[Errno 111] Connection refused</span>\n\n<span class=\"gt\">The above exception was the direct cause of the following exception:</span>\n\n<span class=\"gt\">Traceback (most recent call last):</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/urllib3/connectionpool.py\"</span>, line <span class=\"m\">787</span>, in <span class=\"n\">urlopen</span>\n<span class=\"w\">    </span><span class=\"n\">response</span> <span class=\"o\">=</span> <span class=\"bp\">self</span><span class=\"o\">.</span><span class=\"n\">_make_request</span><span class=\"p\">(</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/urllib3/connectionpool.py\"</span>, line <span class=\"m\">488</span>, in <span class=\"n\">_make_request</span>\n<span class=\"w\">    </span><span class=\"k\">raise</span> <span class=\"n\">new_e</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/urllib3/connectionpool.py\"</span>, line <span class=\"m\">464</span>, in <span class=\"n\">_make_request</span>\n<span class=\"w\">    </span><span class=\"bp\">self</span><span class=\"o\">.</span><span class=\"n\">_validate_conn</span><span class=\"p\">(</span><span class=\"n\">conn</span><span class=\"p\">)</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/urllib3/connectionpool.py\"</span>, line <span class=\"m\">1093</span>, in <span class=\"n\">_validate_conn</span>\n<span class=\"w\">    </span><span class=\"n\">conn</span><span class=\"o\">.</span><span class=\"n\">connect</span><span class=\"p\">()</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/urllib3/connection.py\"</span>, line <span class=\"m\">753</span>, in <span class=\"n\">connect</span>\n<span class=\"w\">    </span><span class=\"bp\">self</span><span class=\"o\">.</span><span class=\"n\">sock</span> <span class=\"o\">=</span> <span class=\"n\">sock</span> <span class=\"o\">=</span> <span class=\"bp\">self</span><span class=\"o\">.</span><span class=\"n\">_new_conn</span><span class=\"p\">()</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/urllib3/connection.py\"</span>, line <span class=\"m\">213</span>, in <span class=\"n\">_new_conn</span>\n<span class=\"w\">    </span><span class=\"k\">raise</span> <span class=\"n\">NewConnectionError</span><span class=\"p\">(</span>\n<span class=\"gr\">urllib3.exceptions.NewConnectionError</span>: <span class=\"n\">&lt;urllib3.connection.HTTPSConnection object at 0x7f02a47092d0&gt;: Failed to establish a new connection: [Errno 111] Connection refused</span>\n\n<span class=\"gt\">The above exception was the direct cause of the following exception:</span>\n\n<span class=\"gt\">Traceback (most recent call last):</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/requests/adapters.py\"</span>, line <span class=\"m\">696</span>, in <span class=\"n\">send</span>\n<span class=\"w\">    </span><span class=\"n\">resp</span> <span class=\"o\">=</span> <span class=\"n\">conn</span><span class=\"o\">.</span><span class=\"n\">urlopen</span><span class=\"p\">(</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/urllib3/connectionpool.py\"</span>, line <span class=\"m\">841</span>, in <span class=\"n\">urlopen</span>\n<span class=\"w\">    </span><span class=\"n\">retries</span> <span class=\"o\">=</span> <span class=\"n\">retries</span><span class=\"o\">.</span><span class=\"n\">increment</span><span class=\"p\">(</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/urllib3/util/retry.py\"</span>, line <span class=\"m\">519</span>, in <span class=\"n\">increment</span>\n<span class=\"w\">    </span><span class=\"k\">raise</span> <span class=\"n\">MaxRetryError</span><span class=\"p\">(</span><span class=\"n\">_pool</span><span class=\"p\">,</span> <span class=\"n\">url</span><span class=\"p\">,</span> <span class=\"n\">reason</span><span class=\"p\">)</span> <span class=\"kn\">from</span><span class=\"w\"> </span><span class=\"nn\">reason</span>  <span class=\"c1\"># type: ignore[arg-type]</span>\n<span class=\"gr\">urllib3.exceptions.MaxRetryError</span>: <span class=\"n\">HTTPSConnectionPool(host='overpass-api.de', port=443): Max retries exceeded with url: /api/interpreter (Caused by NewConnectionError('&lt;urllib3.connection.HTTPSConnection object at 0x7f02a47092d0&gt;: Failed to establish a new connection: [Errno 111] Connection refused'))</span>\n\n<span class=\"gt\">During handling of the above exception, another exception occurred:</span>\n\n<span class=\"gt\">Traceback (most recent call last):</span>\n  File <span class=\"nb\">\"/tmp/marimo_469431/__marimo__cell_BYtC_.py\"</span>, line <span class=\"m\">122</span>, in <span class=\"n\">get_city_graph</span>\n<span class=\"w\">    </span><span class=\"n\">city_graph</span> <span class=\"o\">=</span> <span class=\"n\">ox</span><span class=\"o\">.</span><span class=\"n\">graph</span><span class=\"o\">.</span><span class=\"n\">graph_from_polygon</span><span class=\"p\">(</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/osmnx/graph.py\"</span>, line <span class=\"m\">495</span>, in <span class=\"n\">graph_from_polygon</span>\n<span class=\"w\">    </span><span class=\"n\">G_buff</span> <span class=\"o\">=</span> <span class=\"n\">_create_graph</span><span class=\"p\">(</span><span class=\"n\">response_jsons</span><span class=\"p\">,</span> <span class=\"n\">bidirectional</span><span class=\"p\">)</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/osmnx/graph.py\"</span>, line <span class=\"m\">624</span>, in <span class=\"n\">_create_graph</span>\n<span class=\"w\">    </span><span class=\"k\">for</span> <span class=\"n\">response_json</span> <span class=\"ow\">in</span> <span class=\"n\">response_jsons</span><span class=\"p\">:</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/osmnx/_overpass.py\"</span>, line <span class=\"m\">402</span>, in <span class=\"n\">_download_overpass_network</span>\n<span class=\"w\">    </span><span class=\"k\">yield</span> <span class=\"n\">_overpass_request</span><span class=\"p\">(</span><span class=\"n\">OrderedDict</span><span class=\"p\">(</span><span class=\"n\">data</span><span class=\"o\">=</span><span class=\"n\">query_str</span><span class=\"p\">))</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/osmnx/_overpass.py\"</span>, line <span class=\"m\">469</span>, in <span class=\"n\">_overpass_request</span>\n<span class=\"w\">    </span><span class=\"n\">response</span> <span class=\"o\">=</span> <span class=\"n\">requests</span><span class=\"o\">.</span><span class=\"n\">post</span><span class=\"p\">(</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/requests/api.py\"</span>, line <span class=\"m\">134</span>, in <span class=\"n\">post</span>\n<span class=\"w\">    </span><span class=\"k\">return</span> <span class=\"n\">request</span><span class=\"p\">(</span><span class=\"s2\">\"post\"</span><span class=\"p\">,</span> <span class=\"n\">url</span><span class=\"p\">,</span> <span class=\"n\">data</span><span class=\"o\">=</span><span class=\"n\">data</span><span class=\"p\">,</span> <span class=\"n\">json</span><span class=\"o\">=</span><span class=\"n\">json</span><span class=\"p\">,</span> <span class=\"o\">**</span><span class=\"n\">kwargs</span><span class=\"p\">)</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/requests/api.py\"</span>, line <span class=\"m\">71</span>, in <span class=\"n\">request</span>\n<span class=\"w\">    </span><span class=\"k\">return</span> <span class=\"n\">session</span><span class=\"o\">.</span><span class=\"n\">request</span><span class=\"p\">(</span><span class=\"n\">method</span><span class=\"o\">=</span><span class=\"n\">method</span><span class=\"p\">,</span> <span class=\"n\">url</span><span class=\"o\">=</span><span class=\"n\">url</span><span class=\"p\">,</span> <span class=\"o\">**</span><span class=\"n\">kwargs</span><span class=\"p\">)</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/requests/sessions.py\"</span>, line <span class=\"m\">651</span>, in <span class=\"n\">request</span>\n<span class=\"w\">    </span><span class=\"n\">resp</span> <span class=\"o\">=</span> <span class=\"bp\">self</span><span class=\"o\">.</span><span class=\"n\">send</span><span class=\"p\">(</span><span class=\"n\">prep</span><span class=\"p\">,</span> <span class=\"o\">**</span><span class=\"n\">send_kwargs</span><span class=\"p\">)</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/requests/sessions.py\"</span>, line <span class=\"m\">784</span>, in <span class=\"n\">send</span>\n<span class=\"w\">    </span><span class=\"n\">r</span> <span class=\"o\">=</span> <span class=\"n\">adapter</span><span class=\"o\">.</span><span class=\"n\">send</span><span class=\"p\">(</span><span class=\"n\">request</span><span class=\"p\">,</span> <span class=\"o\">**</span><span class=\"n\">kwargs</span><span class=\"p\">)</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/requests/adapters.py\"</span>, line <span class=\"m\">729</span>, in <span class=\"n\">send</span>\n<span class=\"w\">    </span><span class=\"k\">raise</span> <span class=\"ne\">ConnectionError</span><span class=\"p\">(</span><span class=\"n\">e</span><span class=\"p\">,</span> <span class=\"n\">request</span><span class=\"o\">=</span><span class=\"n\">request</span><span class=\"p\">)</span>\n<span class=\"gr\">requests.exceptions.ConnectionError</span>: <span class=\"n\">HTTPSConnectionPool(host='overpass-api.de', port=443): Max retries exceeded with url: /api/interpreter (Caused by NewConnectionError('&lt;urllib3.connection.HTTPSConnection object at 0x7f02a47092d0&gt;: Failed to establish a new connection: [Errno 111] Connection refused'))</span>\n\n<span class=\"gt\">During handling of the above exception, another exception occurred:</span>\n\n<span class=\"gt\">Traceback (most recent call last):</span>\n  File <span class=\"nb\">\"/tmp/marimo_469431/__marimo__cell_Kclp_.py\"</span>, line <span class=\"m\">2</span>, in <span class=\"n\">&lt;module&gt;</span>\n<span class=\"w\">    </span><span class=\"n\">insert_graph_metadata</span><span class=\"p\">(</span>\n  File <span class=\"nb\">\"/tmp/marimo_469431/__marimo__cell_RGSE_.py\"</span>, line <span class=\"m\">22</span>, in <span class=\"n\">insert_graph_metadata</span>\n<span class=\"w\">    </span><span class=\"p\">)</span> <span class=\"o\">=</span> <span class=\"n\">get_city_graph</span><span class=\"p\">(</span>\n  File <span class=\"nb\">\"/tmp/marimo_469431/__marimo__cell_BYtC_.py\"</span>, line <span class=\"m\">167</span>, in <span class=\"n\">get_city_graph</span>\n<span class=\"w\">    </span><span class=\"n\">time</span><span class=\"o\">.</span><span class=\"n\">sleep</span><span class=\"p\">(</span>\n  File <span class=\"nb\">\"/home/thomas/Documents/ITU/thesis/code/FEATHER_original/FEATHER/.pixi/envs/default/lib/python3.10/site-packages/marimo/_runtime/handlers.py\"</span>, line <span class=\"m\">72</span>, in <span class=\"n\">interrupt_handler</span>\n<span class=\"w\">    </span><span class=\"k\">raise</span> <span class=\"n\">MarimoInterrupt</span>\n<span class=\"gr\">KeyboardInterrupt</span>\n</pre></div>\n</span>",
+          "mimetype": "application/vnd.marimo+traceback"
+        }
+      ]
+    },
+    {
+      "id": "emfo",
+      "code_hash": "c627563e14e7f98bbd49037de8bd0d7e",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "This cell was interrupted and needs to be re-run",
+          "traceback": null
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "Hstk",
+      "code_hash": "89f446612f9d6103427f3be8400ac456",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (KeyboardInterrupt): ",
+          "traceback": null
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "nWHF",
+      "code_hash": "044e7bbd2e832901bc923976c28a7e12",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (KeyboardInterrupt): ",
+          "traceback": null
+        }
+      ],
+      "console": []
+    }
+  ]
+}
