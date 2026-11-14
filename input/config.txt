@@ -1,6 +1,6 @@
 # list of places to download from Geofabrik
-# too big places = [[Paris, France]]
-place = [[Paris, France], [Copenhagen Municipality, Denmark], [Barcelona, Catalonia, Spain], [Amsterdam, North Holland, Netherlands], [Polla, Salerno, Campania, Italy], [Milton Keynes, England, United Kingdom], [Swindon, England, United Kingdom], [Oulu, Finland]]
+# place = [[Paris, France], [Copenhagen Municipality, Denmark], [Barcelona, Catalonia, Spain], [Amsterdam, North Holland, Netherlands], [Polla, Salerno, Campania, Italy], [Milton Keynes, England, United Kingdom], [Swindon, England, United Kingdom], [Oulu, Finland]]
+place = [[Paris, France], [Polla, Salerno, Campania, Italy]]
 #float on the x-asis what should the max value be?
 theta_max = 45
 #int how many points to look at
