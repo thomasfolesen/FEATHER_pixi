@@ -977,8 +977,18 @@ def finish_band_figure(fig, axes, title, destination):
         0.5, 0.01, "Shading: mean ± 1 standard deviation across selected nodes",
         ha="center", fontsize=9,
     )
-    fig.tight_layout(rect=(0, 0.04, 1, 0.96))
-    save_figure(fig, destination)
+    fig.subplots_adjust(
+    left=0.10,
+    right=0.96,
+    bottom=0.12,
+    top=0.90,
+    hspace=0.50,
+    wspace=0.30,
+    )
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(destination, dpi=300, bbox_inches=None, facecolor="white")
+    plt.close(fig)
 
 
 def save_high_low_city(place, summaries, theta, percent, folder):
