@@ -29,6 +29,7 @@ OUTPUT_ROOT = PROJECT_ROOT / "output"
 GEOFABRIK_INDEX_URL = "https://download.geofabrik.de/index-v1.json"
 GEOFABRIK_WAIT_SECONDS = 60 # change this if server connection fails due to repeated tries / overload to server
 NETWORK_TYPE = "walking"
+TARGET_CONTINENTS = {"north-america", "europe"}
 
 
 def parse_config_list(value):
@@ -204,10 +205,10 @@ def select_source(index, clip_boundary):
         feature["properties"]["id"]: feature["properties"]
         for feature in index["features"]
     }
-    def under_europe(region_id):
+    def under_continent(region_id, targets):
         # Follow parent regions upwards, f.x. Denmark -> Europe.
         while region_id:
-            if region_id == "europe":
+            if region_id in targets:
                 return True
             region_id = properties[region_id].get("parent")
         return False
@@ -222,7 +223,7 @@ def select_source(index, clip_boundary):
         # Read the PBF download URL, if available.
         pbf_url = prop.get("urls", {}).get("pbf")
         # Skip regions without a PBF download or outside Europe.
-        if not pbf_url or not under_europe(region_id):
+        if not pbf_url or not under_continent(region_id, TARGET_CONTINENTS):
             continue
         # Convert the region's GeoJSON geometry into a Shapely geometry.
         region = shape(feature["geometry"])
