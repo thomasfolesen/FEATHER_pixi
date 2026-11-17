@@ -55,7 +55,7 @@ def city_inputs(place, config):
         print(f"{place}: required pipeline files are missing:")
         for path in missing:
             print(f"  {path}")
-        print("Run pipeline/geofabrik_final.py first.\n")
+        print("Run pipeline/FEATHER_embeddings.py first.\n")
         return None
     with graph_path.open("rb") as file:
         graph = pickle.load(file)
@@ -286,144 +286,84 @@ def high_low_summary(values, distances, node_ids, categories, percent):
             }
     return summaries
 
-def draw_band(ax, theta, mean, std, label, color):
-    ax.plot(theta, mean, color=color, label=label, linewidth=1.5)
-    ax.fill_between(theta, mean - std, mean + std, color=color, alpha=0.18)
-
-def finish_band_figure(fig, axes, title, destination):
-    for r, row in enumerate(axes):
-        for component, ax in enumerate(row):
-            prefix = f"r = {r + 1} — " if len(axes) > 1 else ""
-            title_component = ["Real (cosine)", "Imaginary (sine)"][component]
-            format_curve_axis(ax, prefix + title_component, "Mean across selected nodes")
-        row[0].legend(fontsize=8)
-    # Leave the band uncut; mean ± SD may extend beyond [-1, 1].
-    fig.suptitle(title)
-    fig.text(
-        0.5, 0.01, "Shading: mean ± 1 standard deviation across selected nodes",
-        ha="center", fontsize=9,
-    )
-    fig.tight_layout(rect=(0, 0.04, 1, 0.96))
-    save_figure(fig, destination)
-
-
 def save_high_low_city(place, summaries, theta, percent, folder):
     for category, groups in summaries.items():
-        order = groups["low"]["mean"].shape[0]
-        fig, axes = plt.subplots(
-            1, 2, figsize=(14, 5), sharex=True, sharey=True
-        )
-
-        for r in range(order):
-            color = plt.get_cmap("tab10")(r % 10)
-
-            for group, linestyle in [("low", "-"), ("high", "--")]:
-                data = groups[group]
-
-                for component, ax in enumerate(axes):
-                    mean = data["mean"][r, component]
-                    std = data["std"][r, component]
-
-                    ax.plot(
-                        theta,
-                        mean,
-                        color=color,
-                        linestyle=linestyle,
-                        linewidth=1.5,
-                        label=f"r = {r + 1} — {group} distance",
-                    )
-                    ax.fill_between(
-                        theta,
-                        mean - std,
-                        mean + std,
-                        color=color,
-                        alpha=0.06,
-                    )
-
-        for ax, component_name in zip(
-            axes, ["Real (cosine)", "Imaginary (sine)"]
-        ):
-            format_curve_axis(
-                ax, component_name, "Mean across selected nodes"
-            )
-
-        axes[1].legend(
-            loc="upper left",
-            bbox_to_anchor=(1.02, 1),
-            fontsize=8,
-        )
-
-        low = groups["low"]
-        high = groups["high"]
-
-        fig.suptitle(
-            f"{place} — {category.replace('_', ' ')}\n"
-            f"Lowest and highest {percent:g}% of finite distances"
-        )
-        fig.text(
-            0.5,
-            0.02,
-            f"Low: n={low['count']}, "
-            f"{low['distance_min']:.1f}–{low['distance_max']:.1f} m | "
-            f"High: n={high['count']}, "
-            f"{high['distance_min']:.1f}–{high['distance_max']:.1f} m\n"
-            "Solid: low distance | Dashed: high distance | "
-            "Shading: mean ± 1 population standard deviation",
-            ha="center",
-            fontsize=9,
-        )
-        fig.tight_layout(rect=(0, 0.10, 1, 0.93))
-        save_figure(fig, folder / f"feather_{category}.png")
-        
-
-def save_high_low_comparisons(city_groups, categories, theta, order, percent, folder):
-    # Keep each city's colour the same across all panels.
-    colors = {
-        place: plt.get_cmap("tab10")(index % 10)
-        for index, place in enumerate(city_groups)
-    }
-    folder.mkdir(parents=True, exist_ok=True)
-    for category in categories:
-        available = {
-            place: summaries[category]
-            for place, summaries in city_groups.items()
-            if category in summaries
-        }
-        if not available:
-            continue
-        fig, axes = plt.subplots(2, 2, figsize=(12, 8), sharex=True, sharey=True)
-        # High distances on top, low distances on the bottom.
+        fig, axes = plt.subplots(2, 2, figsize=(14, 9), sharex=True, sharey=True)
         for row, group in enumerate(("high", "low")):
-            for place, groups in available.items():
-                data = groups[group]
-                for component, ax in enumerate(axes[row]):
-                    draw_band(
-                        ax, theta, data["mean"][component], data["std"][component],
-                        (
-                            f"{place} (n={data['count']})\n"
-                            f"Mean walking distance: "
-                            f"{data['distance_min']:.1f}–{data['distance_max']:.1f} m"
-                        ),
-                        colors[place],
-                    )
+            data = groups[group]
             for component, ax in enumerate(axes[row]):
-                component_name = ["Real (cosine)", "Imaginary (sine)"][component]
-                format_curve_axis(
-                    ax, f"{group.title()} distance — {component_name}",
-                    "Mean across selected nodes",
-                )
+                for r in range(len(data["mean"])):
+                    ax.plot(theta, data["mean"][r, component], label=f"r = {r + 1}")
+                format_curve_axis(ax, ["Real (Cosine)", "Imaginary (Sine)"][component],
+                                  "Mean across selected nodes")
+                ax.set_ylim(-1.05, 1.05)
             axes[row, 0].legend(fontsize=8)
-        fig.suptitle(
-            f"{category.replace('_', ' ')} — city comparison, r = {order}\n"
-            f"Highest and lowest {percent:g}% of finite distances"
-        )
-        fig.text(
-            0.5, 0.01, "Shading: mean ± 1 standard deviation across selected nodes",
-            ha="center", fontsize=9,
-        )
-        fig.tight_layout(rect=(0, 0.04, 1, 0.94))
-        destination = folder / f"feather_{category}_high_low.png"
-        save_figure(fig, destination)
+            fig.text(0.5, 0.91 if row == 0 else 0.46,
+                     f"{'Highest' if group == 'high' else 'Lowest'} {percent:g}% — "
+                     f"n={data['count']} — {data['distance_min']:.1f}–{data['distance_max']:.1f} m",
+                     ha="center")
+        fig.suptitle(f"{place} — {category.replace('_', ' ')}")
+        fig.subplots_adjust(top=0.85, bottom=0.08, hspace=0.55, wspace=0.22)
+        save_figure(fig, folder / f"feather_{category}.png")
+
+
+def save_difference_bars(place, old, new, distances, node_ids, config, folder):
+    """Mean/median of node-wise absolute differences; tails selected by POI distance.
+
+    First average abs(new-old) over components and theta per node and order.
+    Mean and median summarize these node scores, not differences of mean curves.
+    High/low bars average the same scores within distance-selected groups.
+    """
+    shape = (len(node_ids), config["order"], 2, len(config["categories"]), config["eval_points"])
+    scores = np.abs(new.reshape(shape) - old.reshape(shape)).mean(axis=(2, 4))
+    records = []
+    for c, category in enumerate(config["categories"]):
+        raw = distances[f"{category}_mean_distance_m"].reindex(node_ids)
+        finite = raw[np.isfinite(raw)].sort_index().sort_values(kind="stable")
+        groups = {}
+        if len(finite) >= 2:
+            count = max(1, int(len(finite) * config["high_low_percent"] / 100))
+            for group, selected in (("high", finite.iloc[-count:]), ("low", finite.iloc[:count])):
+                groups[group] = (pd.Index(node_ids).get_indexer(selected.index), selected)
+        for r in range(config["order"]):
+            values = scores[:, r, c]
+            record = {"category": category, "r": r + 1,
+                      "mean_abs_embedding_difference": values.mean(),
+                      "median_abs_embedding_difference": np.median(values), "vertices": len(values)}
+            for group in ("high", "low"):
+                positions, selected = groups.get(group, ([], pd.Series(dtype=float)))
+                record[f"{group}_mean_abs_embedding_difference"] = values[positions].mean() if len(positions) else np.nan
+                record[f"{group}_vertices"] = len(positions)
+                record[f"{group}_distance_min_m"] = selected.min()
+                record[f"{group}_distance_max_m"] = selected.max()
+            records.append(record)
+        rows = pd.DataFrame(records).query("category == @category")
+        fig, ax = plt.subplots(figsize=(10, 5))
+        x = np.arange(config["order"])
+        for j, (column, label) in enumerate((
+            ("mean_abs_embedding_difference", "Mean"),
+            ("median_abs_embedding_difference", "Median"),
+            ("high_mean_abs_embedding_difference", "High-distance mean"),
+            ("low_mean_abs_embedding_difference", "Low-distance mean"),
+        )):
+            ax.bar(x + (j - 1.5) * 0.2, rows[column], width=0.2, label=label)
+        ax.set_xticks(x, [str(r + 1) for r in x])
+        ax.set_xlabel("Walk order r")
+        ax.set_ylabel("Absolute embedding difference")
+        ax.set_ylim(bottom=0)
+        ax.legend(fontsize=8)
+        ax.set_title(f"{place} — {category.replace('_', ' ')}\nFEATHER_new vs FEATHER")
+        ax.grid(axis="y", alpha=0.2)
+        details = [f"High/low: highest/lowest {config['high_low_percent']:g}% of finite distances among retained nodes."]
+        for group, (_, selected) in groups.items():
+            details.append(f"{group.title()}: n={len(selected)}, {selected.min():.1f}–{selected.max():.1f} m")
+        if not groups:
+            details.append("High/low unavailable: fewer than two finite distances.")
+        fig.text(0.5, 0.01, "\n".join(details), ha="center", fontsize=9)
+        fig.tight_layout(rect=(0, 0.14, 1, 1))
+        save_figure(fig, folder / "difference_bars" / f"{category}.png")
+    pd.DataFrame(records).to_csv(folder / "difference_statistics.csv", index=False)
+
 
 def save_original_curves(place, embedding, distances, node_ids, config):
     categories = config["categories"]
@@ -502,8 +442,6 @@ def main():
         return
     if not 0 < config["high_low_percent"] <= 50:
         raise ValueError("high_low_percent must be greater than 0 and at most 50.")
-    city_means, city_groups = {}, {}
-    city_medians = {"FEATHER": {}}
     for place in config["places"]:
         loaded = city_inputs(place, config)
         if loaded is None:
@@ -514,11 +452,11 @@ def main():
                 graph, distances, config["categories"], config["CLIP_BUFFER_M"]
             )
             old_embedding = fit_model(FEATHER, graph, features, config)
-            city_means[place], city_groups[place] = save_original_curves(
+            save_original_curves(
                 place, old_embedding, distances, node_ids, config
             )
             new_embedding = fit_model(FEATHER_new, graph, features, config)
-            city_medians["FEATHER"][place] = save_median_curves(
+            save_median_curves(
                 place, old_embedding, node_ids, config, "FEATHER"
             )
             if old_embedding.shape != new_embedding.shape:
@@ -531,41 +469,10 @@ def main():
                 place, OUTPUT_ROOT / safe_filename(place),
                 loaded[0], node_ids, old_embedding, new_embedding, config,
             )
+            save_difference_bars(place, old_embedding, new_embedding, distances,
+                                 node_ids, config, OUTPUT_ROOT / safe_filename(place))
         except (KeyError, ValueError) as error:
             print(f"{place}: comparison skipped: {error}")
-    theta = np.linspace(0.01, config["theta_max"], config["eval_points"])
-    curve_root = PROJECT_ROOT / "output" / "FEATHER_curves_original"
-    for index, category in enumerate(config["categories"]):
-        if city_means:
-            save_curves(
-                {place: means[:, index, :] for place, means in city_means.items()},
-                theta,
-                f"Original FEATHER — {category.replace('_', ' ')} — city comparison, r = {config['order']}",
-                curve_root / "FEATHER_curves_mean" / f"feather_{category}.png",
-            )
-    for algorithm, place_medians in city_medians.items():
-        if not place_medians:
-            continue
-        median_root = (
-            PROJECT_ROOT / "output" / "FEATHER_curves_original"
-            / "FEATHER_curves_median"
-        )
-        for index, category in enumerate(config["categories"]):
-            save_curves(
-                {
-                    place: values[:, index, :]
-                    for place, values in place_medians.items()
-                },
-                theta,
-                f"{algorithm} — {category.replace('_', ' ')} median, city comparison, r = {config['order']}",
-                median_root / f"feather_{category}_city_comparison.png",
-                statistic="Median",
-            )
-    if city_groups:
-        save_high_low_comparisons(
-            city_groups, config["categories"], theta, config["order"],
-            config["high_low_percent"], curve_root / "FEATHER_curves_high_low",
-        )
 
 if __name__ == "__main__":
     main()
