@@ -1,0 +1,62 @@
+# Embedding variants for clusters.py and classification.py.
+#  The scripts make every combination of the 3 lists below.
+#  Each combination is one test.  Example: mean + city + all = "mean__city__all"
+#  To see all test names:  pixi run python supervised_learning/classification.py --list
+#
+# ---------------------------------------------------------------------
+# 1. CATEGORIES  (what to do with the 10 amenity columns)
+#      as_is     = keep one column for each amenity (no reduction)
+#      mean      = the mean of the 10 amenities
+#      std       = the standard deviation of the 10 amenities
+#      mean_std  = mean and std together
+#    Write one or more, separated by commas.
+# ---------------------------------------------------------------------
+categories = as_is, mean, std, mean_std
+#
+#
+#
+# ---------------------------------------------------------------------
+# 2. LEVEL  (one row for each city, or one row for each node)
+#      city  = one row for each city   (classification uses only this)
+#      node  = one row for each node   (only for clustering)
+# ---------------------------------------------------------------------
+levels = city
+#
+#
+#
+# ---------------------------------------------------------------------
+# 3. R-VALUES  (which walk orders to use)
+#      all           = all r-values
+#      min_max       = only the smallest and the largest r
+#      single:3      = only r3            (change the number)
+#      interval:3-7  = r3, r4, r5, r6, r7 (change the numbers)
+#    The numbers must not be larger than "order" in config.txt.
+# ---------------------------------------------------------------------
+r_values = all, min_max, single:1, interval:3-7
+#
+#
+#
+# ---------------------------------------------------------------------
+# 4. ONLY  (optional)
+#    Empty = run all combinations above.
+#    Or write test names to run only those, for example:
+#      only = mean__city__all, as_is__city__r3-7
+# ---------------------------------------------------------------------
+only = 
+#
+#
+#
+# ---------------------------------------------------------------------
+# 5. FOLDS  (cross-validation in classification.py)
+#    Each class (low, medium, high) needs at least this many cities.
+#      3 = local test (9 cities)
+#      5 = HPC (15 cities or more)
+# ---------------------------------------------------------------------
+folds = 5
+#
+#
+#
+# ---------------------------------------------------------------------
+# 6. NODE SAMPLE  (only for node-level clustering, you can ignore it)
+# ---------------------------------------------------------------------
+node_sample_per_city = 1000
