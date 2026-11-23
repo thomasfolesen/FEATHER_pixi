@@ -5,7 +5,6 @@
 # Reads every city folder in output/FEATHER_embeddings/ and writes
 # output/FEATHER_patterns/graph_features.csv (one row per place) plus
 # output/FEATHER_patterns/graph_features_info.json (vertex counts, skipped files).
-# unsupervised_learning/clusters.py reads these two files; it never rewrites them.
 
 import json
 import re

@@ -2,14 +2,14 @@
 # Save as unsupervised_learning/clusters.py and run from the project root:
 # pixi run python unsupervised_learning/clusters.py
 # Needs pipeline/graph_feature_calculation.py for the graph feature calculation.
-# Run pipeline/graph_feature_calculation.py first: it writes
-# output/FEATHER_patterns/graph_features.csv, which this script only reads.
+# Run pipeline/geofabrik_final.py first if embedding files are missing.
+# Reads every city folder in output/FEATHER_embeddings/.
 # All embeddings must use the same categories, theta grid, scale and trimming.
 # In input/config.txt, use pattern_clusters = 4 for four clusters,
 # or pattern_clusters = auto to select a count using silhouette scores.
 
 import json
-import sys
+import re
 from pathlib import Path
 
 import joblib
@@ -24,21 +24,26 @@ from sklearn.metrics import silhouette_samples, silhouette_score
 from sklearn.preprocessing import StandardScaler
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-# Make pipeline/ importable when this script is run directly.
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-from pipeline.graph_feature_calculation import (
-    GRAPH_FEATURES_INFO_PATH, GRAPH_FEATURES_PATH, feature_names, load_config as load_base_config,
-)
-
 CONFIG_PATH = PROJECT_ROOT / "input" / "config.txt"
 OUTPUT_ROOT = PROJECT_ROOT / "output" / "FEATHER_patterns"
 SEED = 42
 MAX_CLUSTERS = 6
 
 
+def safe_filename(place):
+    return re.sub(r"[^a-zA-Z]+", "_", place).strip("_").lower()
+
+
 def load_config():
-    settings, places, columns = load_base_config()
+    settings = {}
+    for line in CONFIG_PATH.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            key, value = line.split("=", 1)
+            settings[key.strip()] = value.strip()
+    places = [value.strip() for value in re.findall(r"\[([^\[\]]+)\]", settings["place"])]
+    categories = [key for key, value in settings.items() if key != "place" and value.startswith("[[")]
+    order, points = int(settings["order"]), int(settings["eval_points"])
     selection = settings.setdefault("pattern_clusters", "auto").lower()
     if selection != "auto":
         try:
@@ -48,22 +53,49 @@ def load_config():
         if count < 2:
             raise ValueError("pattern_clusters must be auto or an integer of at least 2.")
     settings["pattern_clusters"] = selection
+    if not places or not categories or min(order, points) < 1:
+        raise ValueError("Configure places, categories, and positive order/eval_points.")
+    names = [safe_filename(place) for place in places]
+    if len(set(names)) != len(names):
+        raise ValueError("Some places produce the same filename; remove duplicate places.")
+    columns = [
+        f"r{r}_{category}_eval{point}_{component}"
+        for r in range(1, order + 1)
+        for component in ("real", "imaginary")
+        for category in categories
+        for point in range(1, points + 1)
+    ]
     return settings, places, columns
 
 
-def load_graph_features(columns):
-    """Read graph_features.csv written by pipeline/graph_feature_calculation.py."""
-    rerun = "Run pipeline/graph_feature_calculation.py first."
-    if not GRAPH_FEATURES_PATH.exists() or not GRAPH_FEATURES_INFO_PATH.exists():
-        raise ValueError(f"{GRAPH_FEATURES_PATH} or {GRAPH_FEATURES_INFO_PATH.name} is missing. {rerun}")
-    features = pd.read_csv(GRAPH_FEATURES_PATH, index_col="place", dtype={"place": str},
-                           keep_default_na=False, float_precision="round_trip")
-    info = json.loads(GRAPH_FEATURES_INFO_PATH.read_text(encoding="utf-8"))
-    if features.columns.tolist() != feature_names(columns) or info["embedding_columns"] != columns:
-        raise ValueError(f"{GRAPH_FEATURES_PATH.name} does not match config.txt. {rerun}")
-    if sorted(info["vertices"]) != sorted(features.index):
-        raise ValueError(f"{GRAPH_FEATURES_PATH.name} and {GRAPH_FEATURES_INFO_PATH.name} disagree. {rerun}")
-    return features, info["vertices"], info["skipped_files"]
+def summarise_graph(path, columns):
+    """Read one chunk at a time and combine its mean and variance."""
+    header = pd.read_csv(path, nrows=0).columns.tolist()
+    if set(header) != {"node_id", *columns} or len(header) != len(columns) + 1:
+        raise ValueError(f"{path.name}: embedding columns do not match config.txt. Rerun the pipeline.")
+    count = 0
+    mean = np.zeros(len(columns))
+    squared_deviations = np.zeros(len(columns))
+    # Allow space for several temporary arrays, even with many embedding columns.
+    chunk_size = max(1, min(2000, 16_000_000 // (8 * len(columns) * 4)))
+    for chunk in pd.read_csv(path, usecols=columns, dtype=float, chunksize=chunk_size):
+        values = chunk[columns].to_numpy()
+        if not np.isfinite(values).all():
+            raise ValueError(f"{path.name}: embeddings contain missing or infinite values.")
+        size = len(values)
+        if not size:
+            continue
+        chunk_mean = values.mean(axis=0)
+        chunk_squared = ((values - chunk_mean) ** 2).sum(axis=0)
+        delta = chunk_mean - mean
+        total = count + size
+        squared_deviations += chunk_squared + delta ** 2 * (count * size / total)
+        mean += delta * (size / total)
+        count = total
+    if not count:
+        raise ValueError(f"{path.name}: no vertices found.")
+    std = np.sqrt(np.maximum(squared_deviations / count, 0))
+    return np.concatenate([mean, std]), count
 
 
 def choose_clusters(values, selection="auto"):
@@ -173,14 +205,33 @@ def save_plots(values, memberships, scores):
 
 
 def main():
-    settings, _, columns = load_config()
-    features, counts, skipped = load_graph_features(columns)
-    if len(features) < 6:
+    settings, places, columns = load_config()
+    embedding_root = PROJECT_ROOT / "output" / "FEATHER_embeddings"
+    paths = sorted(embedding_root.glob("*/*_feather_embeddings.csv"))
+    if not paths:
+        raise ValueError(f"No saved embeddings found in {embedding_root}. Run the pipeline first.")
+
+    place_names = {safe_filename(place): place for place in places}
+    summaries, counts, skipped = {}, {}, []
+    print(f"Found {len(paths)} saved embedding files.", flush=True)
+    for path in paths:
+        folder_name = path.parent.name
+        place = place_names.get(folder_name, folder_name.replace("_", " ").title())
+        try:
+            print(f"Reading {place}...", flush=True)
+            summaries[place], counts[place] = summarise_graph(path, columns)
+        except ValueError as error:
+            print(f"Skipping {place}: {error}")
+            skipped.append({"place": place, "file": str(path), "reason": str(error)})
+    if len(summaries) < 6:
         raise ValueError(
-            f"Found only {len(features)} places in {GRAPH_FEATURES_PATH.name}; "
+            f"Found only {len(summaries)} usable embedding files; "
             "at least six places are needed for five PCA directions."
         )
 
+    names = [f"{stat}__{column}" for stat in ("mean", "std") for column in columns]
+    features = pd.DataFrame.from_dict(summaries, orient="index", columns=names)
+    features.index.name = "place"
     # Each city is one sample, regardless of its number of vertices.
     varying = features.columns[np.ptp(features.to_numpy(), axis=0) > 1e-12].tolist()
     if not varying:
@@ -194,6 +245,7 @@ def main():
     }, index=features.index)
 
     OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
+    features.to_csv(OUTPUT_ROOT / "graph_features.csv")
     memberships.to_csv(OUTPUT_ROOT / "cluster_membership.csv")
     scores.to_csv(OUTPUT_ROOT / "cluster_scores.csv", index=False)
     features.groupby(memberships["cluster"]).mean().to_csv(OUTPUT_ROOT / "cluster_feature_means.csv")
