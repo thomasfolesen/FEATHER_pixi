@@ -266,14 +266,12 @@ def variant_columns(variant, available):
         raise ValueError(f"{variant.name}: no columns selected.")
     return keep
 
-# ---------- ONLY USED FOR SMALL TESTING ----------
-
+# cross-validation folds for classification.py (from variants.txt, default is 5)
 def cv_folds(path=VARIANTS_PATH):
     folds = int(read_variant_settings(path).get("folds", 5))
     if folds < 2:
         raise ValueError(f"{path.name}: folds must be 2 or more.")
     return folds
-# ---------- ONLY USED FOR SMALL TESTING ----------
 
 def node_sample_per_city(path=VARIANTS_PATH):
     return int(read_variant_settings(path).get("node_sample_per_city", 1000))
