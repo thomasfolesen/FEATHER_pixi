@@ -1,6 +1,6 @@
 # list of places to download from Geofabrik
 # place = [[Paris, France], [Copenhagen Municipality, Denmark], [Barcelona, Catalonia, Spain], [Amsterdam, North Holland, Netherlands], [Polla, Salerno, Campania, Italy], [Milton Keynes, England, United Kingdom], [Swindon, England, United Kingdom], [Oulu, Finland]]
-place = [[Aarhus Municipality, Denmark], [Amsterdam, North Holland, Netherlands], [Barcelona, Catalonia, Spain], [Bologna, Emilia-Romagna, Italy], [Centennial, Colorado, USA], [Copenhagen Municipality, Denmark], [Düsseldorf, North Rhine-Westphalia, Germany], [Florence, Tuscany, Italy], [Ghent, East Flanders, Belgium], [Gilbert, Arizona, USA], [Groningen, Groningen, Netherlands], [Leskovac, Serbia], [Lisbon, Portugal], [McKinney, Texas, USA], [Munich, Bavaria, Germany], [Paris, France], [Paris, Île-de-France, France], [Polla, Salerno, Campania, Italy], [Porto, Portugal], [Prague, Czech Republic], [Siverek, Şanlıurfa, Turkey], [Stockholm, Sweden], [Surprise, Arizona, USA], [Temecula, California, USA], [Tetovo, North Macedonia], [Utrecht, Utrecht, Netherlands], [Venice, Veneto, Italy], [Vienna, Austria], [Zenica, Bosnia and Herzegovina], [Zurich, Switzerland]]
+place = [[Ghent, East Flanders, Belgium]]
 #float on the x-asis what should the max value be?
 theta_max = 45
 #int how many points to look at
@@ -14,7 +14,7 @@ NEAREST_POIS = 10
 # float IQR fence multiplier -  larger values removes fewer vertices
 outlier_iqr_multiplier = 1.5
 #float. for the sin + cos curves looking at top and bot nodes what is the cutoff for these?
-high_low_percent = 1
+high_low_percent = 10
 #list of places based on OSM taxonomy
 outdoor_activities = [[leisure=park], [leisure=playground], [leisure=bathing_place], [leisure=garden], [leisure=pitch], [leisure=stadium], [leisure=swimming_area], [leisure=track], [tourism=picnic_site]]
 learning = [[amenity=college], [amenity=school], [amenity=library], [amenity=kindergarten], [amenity=university], [amenity=training]]
