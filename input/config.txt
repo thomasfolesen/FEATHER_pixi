@@ -5,8 +5,8 @@ place = [[Ghent, East Flanders, Belgium]]
 theta_max = 45
 #int how many points to look at
 eval_points = 40
-#int. known as r from article
-order = 7
+#int. walking order known as r from article only, embedding csv file only has inserted r values
+orders = [[7]]
 #int sets max distance to amenity and also geo downloaded and used around graph for place
 CLIP_BUFFER_M = 2000
 #int how many POI's and their mean shall be used for the feature value of the vertice

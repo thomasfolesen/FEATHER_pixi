@@ -453,11 +453,26 @@ def calculate_distance_summary(city, graph_data, municipality, categories):
 
 
 def validate_embedding_metadata(embedding_path, config):
-    """Keep the existing parameter checks for reusable embedding CSV files."""
+    """Validate parameters before reusing a FEATHER embedding CSV."""
     metadata_path = embedding_path.with_suffix(".json")
 
     if embedding_path.is_file() and metadata_path.is_file():
         previous = json.loads(metadata_path.read_text(encoding="utf-8"))
+
+        previous_orders = previous.get("orders")
+        if previous_orders is None and previous.get("order") is not None:
+            # Legacy metadata used one maximum order and therefore saved every
+            # order from r1 through that value.
+            previous_orders = list(range(1, int(previous["order"]) + 1))
+
+        if previous_orders != config["orders"]:
+            raise ValueError(
+                "Saved embeddings use different FEATHER orders. "
+                f"Saved={previous_orders}, requested={config['orders']}. "
+                f"Move or delete {embedding_path} and {metadata_path} "
+                "to recompute them."
+            )
+
         for key in (
             "theta_max",
             "CLIP_BUFFER_M",
@@ -473,8 +488,8 @@ def validate_embedding_metadata(embedding_path, config):
     elif embedding_path.is_file():
         print(
             "Warning: legacy embeddings have no parameter metadata; their "
-            "theta and distance settings cannot be verified. Reuse assumes "
-            "the current config produced this CSV.",
+            "orders, theta and distance settings cannot be verified. Reuse "
+            "assumes the current config produced this CSV.",
             flush=True,
         )
 
@@ -502,7 +517,7 @@ def load_saved_embedding(embedding_path, node_ids, expected_columns):
     if set(table.columns) != set(expected_columns):
         raise ValueError(
             "Saved embedding columns do not match the current categories, "
-            f"order or evaluation points: {embedding_path}. Move or delete "
+            f"orders or evaluation points: {embedding_path}. Move or delete "
             "the CSV to calculate fresh embeddings."
         )
 
@@ -526,7 +541,8 @@ def load_saved_embedding(embedding_path, node_ids, expected_columns):
 def process_city(place, config):
     """Create or reuse distances and FEATHER embeddings for one city."""
     categories = config["resolved_categories"]
-    order = config["order"]
+    orders = list(config["orders"])
+    max_order = config["max_order"]
     eval_points = config["eval_points"]
     city = city_cache_paths(place)
     place_name = city["place_name"]
@@ -590,8 +606,13 @@ def process_city(place, config):
     del distance_summary, excluded, municipality
     gc.collect()
 
+    # FEATHER_new calculates every order through max_order. The output CSV
+    # retains only the orders explicitly requested in input/config.txt.
+    all_columns = list(
+        embedding_columns(categories, max_order, eval_points)
+    )
     expected_columns = list(
-        embedding_columns(categories, order, eval_points)
+        embedding_columns(categories, orders, eval_points)
     )
 
     if embedding_path.is_file():
@@ -602,8 +623,10 @@ def process_city(place, config):
         )
         del graph
     else:
+        selected_orders = ", ".join(f"r{order}" for order in orders)
         print(
-            f"Calculating FEATHER embeddings through r = {order}...",
+            f"Calculating FEATHER embeddings through r = {max_order}; "
+            f"saving only {selected_orders}...",
             flush=True,
         )
         inputs = prepare_feather_inputs(graph, distances, categories)
@@ -614,7 +637,7 @@ def process_city(place, config):
         model = FEATHER_new(
             theta_max=config["theta_max"],
             eval_points=eval_points,
-            order=order,
+            order=max_order,
         )
         model.fit(graph=inputs["graph"], X=inputs["features"])
         embedding = model.get_embedding()
@@ -623,11 +646,22 @@ def process_city(place, config):
         if not np.isfinite(embedding).all():
             raise ValueError(f"Calculated embeddings contain non-finite values for {place}.")
 
+        if embedding.shape[1] != len(all_columns):
+            raise ValueError(
+                "Calculated embedding width does not match the expected "
+                f"columns through r={max_order}: got {embedding.shape[1]}, "
+                f"expected {len(all_columns)}."
+            )
+
+        # Attach names to the complete FEATHER output, then keep only the
+        # configured r blocks. For orders = [[1], [7]], the CSV contains only
+        # columns beginning with r1_ and r7_.
         table = pd.DataFrame(
             embedding,
             index=pd.Index(node_ids, name="node_id"),
-            columns=expected_columns,
-        )
+            columns=all_columns,
+        ).loc[:, expected_columns]
+
         embedding_folder.mkdir(parents=True, exist_ok=True)
         table.to_csv(embedding_path, index=True)
 
@@ -635,10 +669,13 @@ def process_city(place, config):
         print(f"Saved FEATHER embeddings: {embedding_path}", flush=True)
 
     metadata = {
-        "schema_version": 1,
+        "schema_version": 2,
         "place": place,
         "categories": list(categories),
-        "order": order,
+        "orders": orders,
+        "max_order": max_order,
+        # Backwards-compatible alias. `orders` is authoritative for saved columns.
+        "order": max_order,
         "eval_points": eval_points,
         "theta_max": config["theta_max"],
         "CLIP_BUFFER_M": CLIP_BUFFER_M,
@@ -668,11 +705,11 @@ def run_pipeline():
     if min(
         CLIP_BUFFER_M,
         NEAREST_POIS,
-        config["order"],
         config["eval_points"],
+        min(config["orders"]),
     ) <= 0:
         raise ValueError(
-            "Buffer, POI count, order and evaluation count must be positive."
+            "Buffer, POI count, orders and evaluation count must be positive."
         )
 
     if not config["places"] or not config["resolved_categories"]:
