@@ -1,0 +1,101 @@
+#!/bin/bash
+#SBATCH --job-name=FEATHER_pipeline
+#SBATCH --output=FEATHER_pipeline-%j.out
+#SBATCH --error=FEATHER_pipeline-%j.err
+#SBATCH --partition=scavenge
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=32G
+#SBATCH --time=24:00:00
+
+set -e
+
+echo "=========================================="
+echo "FEATHER pipeline"
+echo "Job ID: $SLURM_JOB_ID"
+echo "Node: $(hostname)"
+echo "Started: $(date)"
+echo "=========================================="
+
+# Run from the repository root.
+cd /home/thole/FEATHER_pixi
+
+# Make Conda available in the SLURM shell.
+source /opt/itu/easybuild/software/Anaconda3/2025.06-1/etc/profile.d/conda.sh
+
+# Activate project environment.
+conda activate feather
+
+echo
+echo "Python executable:"
+which python
+
+echo
+echo "Python version:"
+python --version
+
+echo
+echo "Conda environment:"
+echo "$CONDA_DEFAULT_ENV"
+
+echo
+echo "=========================================="
+echo "1/5 - Preparing OSM cache"
+echo "Started: $(date)"
+echo "=========================================="
+
+python pipeline/OSM_cache.py
+
+echo
+echo "=========================================="
+echo "2/5 - Creating FEATHER embeddings"
+echo "Started: $(date)"
+echo "=========================================="
+
+python pipeline/FEATHER_embeddings.py
+
+echo
+echo "=========================================="
+echo "3/5 - Creating embedding variants"
+echo "Started: $(date)"
+echo "=========================================="
+
+python pipeline/embedding_variants.py
+
+echo
+echo "=========================================="
+echo "4/5 - Creating graph-level features"
+echo "Started: $(date)"
+echo "=========================================="
+
+python pipeline/graph_feature_calculation.py
+
+echo
+echo "=========================================="
+echo "5/5 - Running logistic-regression classification"
+echo "Started: $(date)"
+echo "=========================================="
+
+python supervised_learning/classification.py
+
+echo
+echo "=========================================="
+echo "Creating compressed results archive"
+echo "Started: $(date)"
+echo "=========================================="
+
+tar -czf FEATHER_results_${SLURM_JOB_ID}.tar.gz \
+  --exclude='output/FEATHER_embeddings/*/*.csv' \
+  --exclude='output/POI_distances/*/*.csv' \
+  output
+
+echo
+echo "Archive created:"
+ls -lh FEATHER_results_${SLURM_JOB_ID}.tar.gz
+
+echo
+echo "=========================================="
+echo "Pipeline finished successfully"
+echo "Finished: $(date)"
+echo "=========================================="
