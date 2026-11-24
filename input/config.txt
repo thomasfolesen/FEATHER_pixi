@@ -1,12 +1,12 @@
 # list of places to download from Geofabrik
 # place = [[Paris, France], [Copenhagen Municipality, Denmark], [Barcelona, Catalonia, Spain], [Amsterdam, North Holland, Netherlands], [Polla, Salerno, Campania, Italy], [Milton Keynes, England, United Kingdom], [Swindon, England, United Kingdom], [Oulu, Finland]]
-place = [[Aarhus Municipality, Denmark], [Amsterdam, North Holland, Netherlands], [Barcelona, Catalonia, Spain], [Bologna, Emilia-Romagna, Italy], [Centennial, Colorado, USA], [Copenhagen Municipality, Denmark], [Düsseldorf, North Rhine-Westphalia, Germany], [Florence, Tuscany, Italy], [Ghent, East Flanders, Belgium], [Gilbert, Arizona, USA], [Groningen, Groningen, Netherlands], [Leskovac, Serbia], [Lisbon, Portugal], [McKinney, Texas, USA], [Munich, Bavaria, Germany], [Paris, France], [Paris, Île-de-France, France], [Polla, Salerno, Campania, Italy], [Porto, Portugal], [Prague, Czech Republic], [Siverek, Şanlıurfa, Turkey], [Stockholm, Sweden], [Surprise, Arizona, USA], [Temecula, California, USA], [Tetovo, North Macedonia], [Utrecht, Utrecht, Netherlands], [Venice, Veneto, Italy], [Vienna, Austria], [Zenica, Bosnia and Herzegovina], [Zurich, Switzerland]]
+place = [[Copenhagen Municipality, Denmark],[Barcelona, Catalonia, Spain],[Amsterdam, North Holland, Netherlands],[Düsseldorf, North Rhine-Westphalia, Germany],[Centennial, Colorado, USA],[McKinney, Texas, USA],[Temecula, California, USA],[Gilbert, Arizona, USA], [Aarhus Municipality, Denmark], [Paris, Île-de-France, France],[Vienna, Austria],[Prague, Czech Republic],[Venice, Veneto, Italy],[Florence, Tuscany, Italy],[Zurich, Switzerland],[Munich, Bavaria, Germany],[Stockholm, Sweden],[Porto, Portugal],[Lisbon, Portugal],[Bologna, Emilia-Romagna, Italy],[Ghent, East Flanders, Belgium],[Utrecht, Utrecht, Netherlands],[Groningen, Groningen, Netherlands],[Montreal, Quebec, Canada],[Boston, Massachusetts, USA],[San Francisco, California, USA],[Madrid, Community of Madrid, Spain],[Milan, Lombardy, Italy],[Warsaw, Masovian Voivodeship, Poland],[Budapest, Hungary],[Lyon, Auvergne-Rhône-Alpes, France],[Hamburg, Germany],[Edinburgh, Scotland, United Kingdom],[Manchester, England, United Kingdom],[Dublin, Ireland],[Seattle, Washington, USA],[Chicago, Illinois, USA],[Philadelphia, Pennsylvania, USA],[Washington, D.C., USA],[Portland, Oregon, USA],[Vancouver, British Columbia, Canada],[Ottawa, Ontario, Canada],[Minneapolis, Minnesota, USA],[Plano, Texas, USA],[Frisco, Texas, USA],[Chandler, Arizona, USA],[Peoria, Arizona, USA],[Surprise, Arizona, USA],[Henderson, Nevada, USA],[North Las Vegas, Nevada, USA],[Naperville, Illinois, USA],[Overland Park, Kansas, USA],[Cary, North Carolina, USA],[Irvine, California, USA],[Fontana, California, USA],[Rancho Cucamonga, California, USA],[Clarksville, Tennessee, USA],[Mississauga, Ontario, Canada],[Brampton, Ontario, Canada]]
 #float on the x-asis what should the max value be?
 theta_max = 45
 #int how many points to look at
 eval_points = 40
-#int. known as r from article
-order = 7
+#int. walking order known as r from article only, embedding csv file only has inserted r values
+orders = [[7]]
 #int sets max distance to amenity and also geo downloaded and used around graph for place
 CLIP_BUFFER_M = 2000
 #int how many POI's and their mean shall be used for the feature value of the vertice
@@ -14,7 +14,7 @@ NEAREST_POIS = 10
 # float IQR fence multiplier -  larger values removes fewer vertices
 outlier_iqr_multiplier = 1.5
 #float. for the sin + cos curves looking at top and bot nodes what is the cutoff for these?
-high_low_percent = 1
+high_low_percent = 10
 #list of places based on OSM taxonomy
 outdoor_activities = [[leisure=park], [leisure=playground], [leisure=bathing_place], [leisure=garden], [leisure=pitch], [leisure=stadium], [leisure=swimming_area], [leisure=track], [tourism=picnic_site]]
 learning = [[amenity=college], [amenity=school], [amenity=library], [amenity=kindergarten], [amenity=university], [amenity=training]]

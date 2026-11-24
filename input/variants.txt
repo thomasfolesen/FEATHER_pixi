@@ -1,62 +1,63 @@
-# Embedding variants for clusters.py and classification.py.
-#  The scripts make every combination of the 3 lists below.
-#  Each combination is one test.  Example: mean + city + all = "mean__city__all"
-#  To see all test names:  pixi run python supervised_learning/classification.py --list
+
+# Embedding / classification experiments.
 #
+# Pipeline order:
+#   1. pixi run python pipeline/FEATHER_embeddings.py
+#   2. pixi run python pipeline/embedding_variants.py
+#   3. pixi run python pipeline/graph_feature_calculation.py
+#   4. pixi run python supervised_learning/classification.py
+#
+# graph_feature_calculation.py converts every node-level embedding into
+# one vector per city. classification.py then reads only those small city-level
+# files; it does not reopen the large node embedding CSVs.
+#
+# To see classification experiment names:
+#   pixi run python supervised_learning/classification.py --list
+
 # ---------------------------------------------------------------------
-# 1. CATEGORIES  (what to do with the 10 amenity columns)
-#      as_is     = keep one column for each amenity (no reduction)
-#      mean      = the mean of the 10 amenities
-#      std       = the standard deviation of the 10 amenities
-#      mean_std  = mean and std together
-#    Write one or more, separated by commas.
+# 1. EMBEDDINGS
+#    Which node-level FEATHER representations to turn into graph vectors.
 # ---------------------------------------------------------------------
-categories = as_is, mean, std, mean_std
-#
-#
-#
+embeddings = r_categoryAll_evalAll, r_categoryMean_evalAll, r_categoryAll_evalMean, r_categoryMean_evalMean
+
 # ---------------------------------------------------------------------
-# 2. LEVEL  (one row for each city, or one row for each node)
-#      city  = one row for each city   (classification uses only this)
-#      node  = one row for each node   (only for clustering)
+# 2. GRAPH REDUCTIONS
+#    How all node rows become one vector per city/graph.
+#
+#      mean      = population mean of every embedding column across nodes
+#      std       = population standard deviation (ddof=0) across nodes
+#      mean_std  = concatenate mean and std
+#
+#    graph_feature_calculation.py creates one CSV for every combination.
 # ---------------------------------------------------------------------
-levels = city
-#
-#
-#
+graph_reductions = mean, std, mean_std
+
 # ---------------------------------------------------------------------
-# 3. R-VALUES  (which walk orders to use)
-#      all           = all r-values
-#      min_max       = only the smallest and the largest r
-#      single:3      = only r3            (change the number)
-#      interval:3-7  = r3, r4, r5, r6, r7 (change the numbers)
-#    The numbers must not be larger than "order" in config.txt.
+# 3. R-VALUES
+#    There is intentionally no r_values setting here.
+#
+#    The selected r-values come from input/config.txt, for example:
+#      orders = [[1], [7]]
+#
+#    graph_feature_calculation.py uses r1 and r7 together when they are
+#    present in the embedding file. Extra old r-values are ignored.
 # ---------------------------------------------------------------------
-r_values = all, min_max, single:1, interval:3-7
-#
-#
-#
+
 # ---------------------------------------------------------------------
-# 4. ONLY  (optional)
-#    Empty = run all combinations above.
-#    Or write test names to run only those, for example:
-#      only = mean__city__all, as_is__city__r3-7
+# 4. ONLY  (classification only, optional)
+#    Empty = classification.py runs every embedding x reduction combination.
+#
+#    Or list exact experiment names, for example:
+#      only = r_categoryAll_evalAll__mean, r_categoryMean_evalMean__mean_std
+#
+#    graph_feature_calculation.py still creates every reduction listed above.
 # ---------------------------------------------------------------------
-only = 
-#
-#
-#
+only =
+
 # ---------------------------------------------------------------------
-# 5. FOLDS  (cross-validation in classification.py)
+# 5. FOLDS
 #    Each class (low, medium, high) needs at least this many cities.
-#      3 = local test (9 cities)
-#      5 = HPC (15 cities or more)
+#      3 = local test (at least 9 labelled cities)
+#      5 = HPC (at least 15 labelled cities)
 # ---------------------------------------------------------------------
 folds = 5
-#
-#
-#
-# ---------------------------------------------------------------------
-# 6. NODE SAMPLE  (only for node-level clustering, you can ignore it)
-# ---------------------------------------------------------------------
-node_sample_per_city = 1000
