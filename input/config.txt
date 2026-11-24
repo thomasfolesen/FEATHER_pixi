@@ -1,6 +1,6 @@
 # list of places to download from Geofabrik
 # place = [[Paris, France], [Copenhagen Municipality, Denmark], [Barcelona, Catalonia, Spain], [Amsterdam, North Holland, Netherlands], [Polla, Salerno, Campania, Italy], [Milton Keynes, England, United Kingdom], [Swindon, England, United Kingdom], [Oulu, Finland]]
-place = [[Barcelona, Catalonia, Spain]]
+place = [[Aarhus Municipality, Denmark], [Amsterdam, North Holland, Netherlands], [Barcelona, Catalonia, Spain], [Bologna, Emilia-Romagna, Italy], [Centennial, Colorado, USA], [Copenhagen Municipality, Denmark], [Düsseldorf, North Rhine-Westphalia, Germany], [Florence, Tuscany, Italy], [Ghent, East Flanders, Belgium], [Gilbert, Arizona, USA], [Groningen, Groningen, Netherlands], [Leskovac, Serbia], [Lisbon, Portugal], [McKinney, Texas, USA], [Munich, Bavaria, Germany], [Paris, France], [Paris, Île-de-France, France], [Polla, Salerno, Campania, Italy], [Porto, Portugal], [Prague, Czech Republic], [Siverek, Şanlıurfa, Turkey], [Stockholm, Sweden], [Surprise, Arizona, USA], [Temecula, California, USA], [Tetovo, North Macedonia], [Utrecht, Utrecht, Netherlands], [Venice, Veneto, Italy], [Vienna, Austria], [Zenica, Bosnia and Herzegovina], [Zurich, Switzerland]]
 #float on the x-asis what should the max value be?
 theta_max = 45
 #int how many points to look at
