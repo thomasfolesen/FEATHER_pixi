@@ -1,7 +1,6 @@
 """Create POI distance CSVs and FEATHER embeddings from cached OSM data."""
 
 import gc
-import json
 import pickle
 import sys
 import time
@@ -18,7 +17,13 @@ from pyrosm import OSM
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from pipeline.pipeline_common import embedding_columns, load_config, safe_filename
+from pipeline.pipeline_common import (
+    FULL_EMBEDDING_VARIANT,
+    embedding_columns,
+    embedding_variant_path,
+    load_config,
+    safe_filename,
+)
 
 
 CONFIG_PATH = PROJECT_ROOT / "input" / "config.txt"
@@ -452,91 +457,46 @@ def calculate_distance_summary(city, graph_data, municipality, categories):
     return distance_summary, distances
 
 
-def validate_embedding_metadata(embedding_path, config):
-    """Validate parameters before reusing a FEATHER embedding CSV."""
-    metadata_path = embedding_path.with_suffix(".json")
 
-    if embedding_path.is_file() and metadata_path.is_file():
-        previous = json.loads(metadata_path.read_text(encoding="utf-8"))
+def validate_saved_embedding(embedding_path, node_ids, expected_columns):
+    """Validate an existing embedding CSV without loading its numeric matrix."""
+    print(f"Using saved FEATHER embeddings: {embedding_path}", flush=True)
 
-        previous_orders = previous.get("orders")
-        if previous_orders is None and previous.get("order") is not None:
-            # Legacy metadata used one maximum order and therefore saved every
-            # order from r1 through that value.
-            previous_orders = list(range(1, int(previous["order"]) + 1))
+    header = pd.read_csv(embedding_path, nrows=0)
+    if header.columns.empty:
+        raise ValueError(f"Saved embedding CSV has no columns: {embedding_path}")
 
-        if previous_orders != config["orders"]:
-            raise ValueError(
-                "Saved embeddings use different FEATHER orders. "
-                f"Saved={previous_orders}, requested={config['orders']}. "
-                f"Move or delete {embedding_path} and {metadata_path} "
-                "to recompute them."
-            )
-
-        for key in (
-            "theta_max",
-            "CLIP_BUFFER_M",
-            "NEAREST_POIS",
-            "outlier_iqr_multiplier",
-        ):
-            if previous.get(key) != config[key]:
-                raise ValueError(
-                    f"Saved embeddings use a different {key}. "
-                    f"Move or delete {embedding_path} and {metadata_path} "
-                    "to recompute them."
-                )
-    elif embedding_path.is_file():
-        print(
-            "Warning: legacy embeddings have no parameter metadata; their "
-            "orders, theta and distance settings cannot be verified. Reuse "
-            "assumes the current config produced this CSV.",
-            flush=True,
-        )
-
-
-def load_saved_embedding(embedding_path, node_ids, expected_columns):
-    """Load and validate an existing FEATHER embedding CSV."""
-    print(f"Loading saved FEATHER embeddings: {embedding_path}", flush=True)
-
-    index_column = pd.read_csv(embedding_path, nrows=0).columns[0]
-    table = pd.read_csv(
-        embedding_path,
-        dtype={index_column: str},
-        index_col=0,
-    )
-    table.index = table.index.map(str)
-
-    expected_index = pd.Index([str(node) for node in node_ids])
-
-    if not table.index.is_unique or not table.columns.is_unique:
-        raise ValueError(
-            "Saved embeddings contain duplicate rows or columns: "
-            f"{embedding_path}"
-        )
-
-    if set(table.columns) != set(expected_columns):
+    index_column = header.columns[0]
+    saved_columns = list(header.columns[1:])
+    if saved_columns != list(expected_columns):
         raise ValueError(
             "Saved embedding columns do not match the current categories, "
-            f"orders or evaluation points: {embedding_path}. Move or delete "
+            f"orders or evaluation points: {embedding_path}. Delete or move "
             "the CSV to calculate fresh embeddings."
         )
 
-    if set(table.index) != set(expected_index):
+    saved_ids = pd.read_csv(
+        embedding_path,
+        usecols=[index_column],
+        dtype={index_column: str},
+    )[index_column]
+
+    if saved_ids.duplicated().any():
+        raise ValueError(f"Saved embeddings contain duplicate node IDs: {embedding_path}")
+
+    expected_ids = [str(node_id) for node_id in node_ids]
+    if saved_ids.tolist() != expected_ids:
         raise ValueError(
-            "Saved embedding nodes do not match the current filtered graph: "
-            f"{embedding_path}. Move or delete the CSV to calculate fresh "
-            "embeddings."
+            "Saved embedding nodes or row order do not match the current "
+            f"filtered graph: {embedding_path}. Delete or move the CSV to "
+            "calculate fresh embeddings."
         )
 
-    embedding = table.loc[
-        expected_index,
-        expected_columns,
-    ].to_numpy(dtype=float)
-    if not np.isfinite(embedding).all():
-        raise ValueError(
-            f"Saved embeddings contain missing or non-finite values: {embedding_path}"
-        )
-
+    print(
+        "No embedding JSON is used. Delete this CSV before rerunning if "
+        "theta_max, distance settings, POI inputs, or IQR settings changed.",
+        flush=True,
+    )
 
 def process_city(place, config):
     """Create or reuse distances and FEATHER embeddings for one city."""
@@ -550,10 +510,11 @@ def process_city(place, config):
     summary_folder = OUTPUT_ROOT / "POI_distances" / place_name
     summary_path = summary_folder / f"{place_name}_poi_distances.csv"
 
-    embedding_folder = OUTPUT_ROOT / "FEATHER_embeddings" / place_name
-    embedding_path = embedding_folder / f"{place_name}_feather_embeddings.csv"
-
-    validate_embedding_metadata(embedding_path, config)
+    embedding_path = embedding_variant_path(
+        place,
+        FULL_EMBEDDING_VARIANT,
+    )
+    embedding_folder = embedding_path.parent
 
     print(f"\nProcessing {place}...", flush=True)
     require_files(
@@ -616,7 +577,7 @@ def process_city(place, config):
     )
 
     if embedding_path.is_file():
-        load_saved_embedding(
+        validate_saved_embedding(
             embedding_path,
             node_ids,
             expected_columns,
@@ -666,27 +627,11 @@ def process_city(place, config):
         table.to_csv(embedding_path, index=True)
 
         del table, inputs, model, embedding
-        print(f"Saved FEATHER embeddings: {embedding_path}", flush=True)
+        print(
+            f"Saved {FULL_EMBEDDING_VARIANT}: {embedding_path}",
+            flush=True,
+        )
 
-    metadata = {
-        "schema_version": 2,
-        "place": place,
-        "categories": list(categories),
-        "orders": orders,
-        "max_order": max_order,
-        # Backwards-compatible alias. `orders` is authoritative for saved columns.
-        "order": max_order,
-        "eval_points": eval_points,
-        "theta_max": config["theta_max"],
-        "CLIP_BUFFER_M": CLIP_BUFFER_M,
-        "NEAREST_POIS": NEAREST_POIS,
-        "outlier_iqr_multiplier": config["outlier_iqr_multiplier"],
-        "high_low_percent": config.get("high_low_percent", 10),
-    }
-    embedding_path.with_suffix(".json").write_text(
-        json.dumps(metadata, indent=2),
-        encoding="utf-8",
-    )
 
     print(f"Finished {place} (distance and embedding CSVs ready).", flush=True)
 
@@ -728,8 +673,8 @@ def run_pipeline():
         gc.collect()
 
     print(
-        "Pipeline finished. Run pipeline/graph_pics.py and "
-        "pipeline/FEATHER_curves_pics.py separately if needed.",
+        "Pipeline finished. Run pipeline/embedding_variants.py to create "
+        "the three mean-based node-level embedding variants.",
         flush=True,
     )
 

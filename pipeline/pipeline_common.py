@@ -1,6 +1,5 @@
 """Shared configuration, output paths and CSV schema."""
 
-import json
 import re
 from pathlib import Path
 
@@ -11,6 +10,14 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = PROJECT_ROOT / "input" / "config.txt"
 CACHE_ROOT = PROJECT_ROOT / "cache"
 OUTPUT_ROOT = PROJECT_ROOT / "output"
+
+FULL_EMBEDDING_VARIANT = "r_categoryAll_evalAll"
+EMBEDDING_VARIANTS = (
+    FULL_EMBEDDING_VARIANT,
+    "r_categoryMean_evalAll",
+    "r_categoryAll_evalMean",
+    "r_categoryMean_evalMean",
+)
 
 
 def parse_config_list(value):
@@ -162,13 +169,29 @@ def embedding_columns(categories, orders, eval_points):
     ]
 
 
-def output_paths(place):
+def embedding_variant_path(place, variant):
+    """Return the node-level embedding CSV path for one named variant."""
+    if variant not in EMBEDDING_VARIANTS:
+        raise ValueError(
+            f"Unknown embedding variant {variant!r}. "
+            f"Expected one of: {', '.join(EMBEDDING_VARIANTS)}"
+        )
+
     name = safe_filename(place)
     return (
         OUTPUT_ROOT
         / "FEATHER_embeddings"
+        / variant
         / name
-        / f"{name}_feather_embeddings.csv",
+        / f"{name}_feather_embeddings.csv"
+    )
+
+
+def output_paths(place):
+    """Return the full embedding path and the POI-distance path."""
+    name = safe_filename(place)
+    return (
+        embedding_variant_path(place, FULL_EMBEDDING_VARIANT),
         OUTPUT_ROOT
         / "POI_distances"
         / name
@@ -184,9 +207,9 @@ def read_node_csv(path):
 
 
 def read_metadata(embedding_path):
-    path = embedding_path.with_suffix(".json")
-    if not path.is_file():
-        raise FileNotFoundError(
-            f"Missing {path}. Run the refactored pipeline first."
-        )
-    return json.loads(path.read_text(encoding="utf-8"))
+    """Legacy compatibility helper for code that still imports this name."""
+    raise RuntimeError(
+        "Embedding metadata JSON files are no longer created. "
+        "Read categories, orders, eval_points and other settings from "
+        "input/config.txt instead."
+    )
