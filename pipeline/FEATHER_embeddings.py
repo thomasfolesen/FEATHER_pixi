@@ -498,11 +498,42 @@ def validate_saved_embedding(embedding_path, node_ids, expected_columns):
         flush=True,
     )
 
+def configured_orders(config):
+    """Return the unique configured FEATHER orders as sorted positive integers.
+
+    Accepts both the config syntax used by this project, for example
+    ``orders = [[7]]`` or ``orders = [[1], [7]]``, and an already-flattened
+    list such as ``[1, 7]`` returned by a config loader.
+    """
+    raw_orders = config["orders"]
+    orders = []
+
+    for item in raw_orders:
+        if isinstance(item, (list, tuple, set)):
+            orders.extend(item)
+        else:
+            orders.append(item)
+
+    try:
+        orders = sorted({int(order) for order in orders})
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            "orders must contain positive integers, for example [[7]] or [[1], [7]]."
+        ) from error
+
+    if not orders or any(order <= 0 for order in orders):
+        raise ValueError(
+            "orders must contain positive integers, for example [[7]] or [[1], [7]]."
+        )
+
+    return orders
+
+
 def process_city(place, config):
     """Create or reuse distances and FEATHER embeddings for one city."""
     categories = config["resolved_categories"]
-    orders = list(config["orders"])
-    max_order = config["max_order"]
+    orders = configured_orders(config)
+    max_order = max(orders)
     eval_points = config["eval_points"]
     city = city_cache_paths(place)
     place_name = city["place_name"]
@@ -647,11 +678,13 @@ def run_pipeline():
     if not np.isfinite(multiplier) or multiplier <= 0:
         raise ValueError("outlier_iqr_multiplier must be finite and positive.")
 
+    orders = configured_orders(config)
+
     if min(
         CLIP_BUFFER_M,
         NEAREST_POIS,
         config["eval_points"],
-        min(config["orders"]),
+        min(orders),
     ) <= 0:
         raise ValueError(
             "Buffer, POI count, orders and evaluation count must be positive."

@@ -1,63 +1,11 @@
 
-# Embedding / classification experiments.
-#
-# Pipeline order:
-#   1. pixi run python pipeline/FEATHER_embeddings.py
-#   2. pixi run python pipeline/embedding_variants.py
-#   3. pixi run python pipeline/graph_feature_calculation.py
-#   4. pixi run python supervised_learning/classification.py
-#
-# graph_feature_calculation.py converts every node-level embedding into
-# one vector per city. classification.py then reads only those small city-level
-# files; it does not reopen the large node embedding CSVs.
-#
-# To see classification experiment names:
-#   pixi run python supervised_learning/classification.py --list
-
-# ---------------------------------------------------------------------
-# 1. EMBEDDINGS
-#    Which node-level FEATHER representations to turn into graph vectors.
-# ---------------------------------------------------------------------
+# Node-level embedding representations to classify after graph pooling.
 embeddings = r_categoryAll_evalAll, r_categoryMean_evalAll, r_categoryAll_evalMean, r_categoryMean_evalMean
 
-# ---------------------------------------------------------------------
-# 2. GRAPH REDUCTIONS
-#    How all node rows become one vector per city/graph.
-#
-#      mean      = population mean of every embedding column across nodes
-#      std       = population standard deviation (ddof=0) across nodes
-#      mean_std  = concatenate mean and std
-#
-#    graph_feature_calculation.py creates one CSV for every combination.
-# ---------------------------------------------------------------------
+# Graph-level pooling of nodes. Population std is used by graph_feature_calculation.py.
 graph_reductions = mean, std, mean_std
 
-# ---------------------------------------------------------------------
-# 3. R-VALUES
-#    There is intentionally no r_values setting here.
-#
-#    The selected r-values come from input/config.txt, for example:
-#      orders = [[1], [7]]
-#
-#    graph_feature_calculation.py uses r1 and r7 together when they are
-#    present in the embedding file. Extra old r-values are ignored.
-# ---------------------------------------------------------------------
-
-# ---------------------------------------------------------------------
-# 4. ONLY  (classification only, optional)
-#    Empty = classification.py runs every embedding x reduction combination.
-#
-#    Or list exact experiment names, for example:
-#      only = r_categoryAll_evalAll__mean, r_categoryMean_evalMean__mean_std
-#
-#    graph_feature_calculation.py still creates every reduction listed above.
-# ---------------------------------------------------------------------
+# Leave blank to run every embedding x graph_reduction combination.
 only =
 
-# ---------------------------------------------------------------------
-# 5. FOLDS
-#    Each class (low, medium, high) needs at least this many cities.
-#      3 = local test (at least 9 labelled cities)
-#      5 = HPC (at least 15 labelled cities)
-# ---------------------------------------------------------------------
 folds = 5
