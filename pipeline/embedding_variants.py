@@ -168,6 +168,12 @@ def create_variants_for_city(place, config):
         for variant, path in final_paths.items()
     }
 
+    # Resume support: if all three final variant CSVs already exist for this
+    # city, do not reread the large source embedding or recompute anything.
+    if all(path.is_file() for path in final_paths.values()):
+        print(f"\nSkipping {place}: all embedding variants already exist.", flush=True)
+        return
+
     for path in final_paths.values():
         path.parent.mkdir(parents=True, exist_ok=True)
     for path in temporary_paths.values():
