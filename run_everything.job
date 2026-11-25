@@ -18,8 +18,11 @@ echo "Node: $(hostname)"
 echo "Started: $(date)"
 echo "=========================================="
 
-# Run from the repository root.
-cd /home/thole/FEATHER_pixi
+# Run from the directory where sbatch was submitted.
+cd "$SLURM_SUBMIT_DIR"
+
+echo "Working directory:"
+pwd
 
 # Make Conda available in the SLURM shell.
 source /opt/itu/easybuild/software/Anaconda3/2025.06-1/etc/profile.d/conda.sh
