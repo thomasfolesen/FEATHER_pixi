@@ -110,7 +110,8 @@ place = [
     [Malang, East Java, Indonesia],
     [Al Ain, Abu Dhabi, United Arab Emirates],
     [Bishkek, Kyrgyzstan]
-]#float on the x-asis what should the max value be?
+]
+#float on the x-asis what should the max value be?
 theta_max = 45
 #int how many points to look at
 eval_points = 40
